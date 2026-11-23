@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LinguaVoice — AI Language &amp; Voice Translator</title>
+  <meta name="description" content="Speak, translate and listen. LinguaVoice turns your voice or text into another language and reads the translation aloud.">
+  <meta name="theme-color" content="#0b1736">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/landing.css">
+  <script type="module" src="js/pages/landing.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="index.html" aria-label="LinguaVoice home">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg>
+        </span>
+        LinguaVoice
+      </a>
+      <button class="nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false" data-nav-toggle>
+        <span class="visually-hidden">Toggle navigation</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="login.html">Log in</a>
+        <a class="btn btn-primary" href="register.html">Get started</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="container">
+        <div>
+          <span class="eyebrow">AI translation · voice &amp; text</span>
+          <h1>Speak once. <span class="gradient-text">Be understood</span> in any language.</h1>
+          <p class="hero-lead">LinguaVoice listens to your voice, translates what you said and reads it back in the language of the person you are talking to — from English and Afrikaans to isiZulu, Spanish and Mandarin.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="register.html">Get started — it's free</a>
+            <a class="btn btn-ghost btn-lg" href="#how-it-works">See how it works</a>
+          </div>
+        </div>
+
+        <div class="preview" role="img" aria-label="Illustration of the LinguaVoice translator: English speech translated into isiZulu">
+          <div class="preview-langs">
+            <div class="lang-chip">English <small>Speaking</small></div>
+            <span class="swap-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>
+            </span>
+            <div class="lang-chip">isiZulu <small>Target</small></div>
+          </div>
+          <div class="preview-panel">
+            <div class="preview-label">You said</div>
+            <p class="preview-text">Hello, how are you?</p>
+          </div>
+          <div class="preview-panel is-output">
+            <div class="preview-label">Translation</div>
+            <p class="preview-text">Sawubona, unjani?</p>
+          </div>
+          <div class="preview-toolbar">
+            <div class="wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <span class="mic-btn" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg>
+            </span>
+            <div class="wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          </div>
+          <p class="preview-note">Illustration only — real translations come from the configured AI provider.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-head">
+          <span class="kicker">Features</span>
+          <h2>Everything you need to talk across languages</h2>
+          <p>Built for real conversations: fast voice capture, accurate AI translation and natural-sounding playback.</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg></span>
+            <h3>Voice translation</h3>
+            <p>Tap the microphone, speak naturally and get your words recognised and translated in seconds.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></span>
+            <h3>Text translation</h3>
+            <p>Type or paste text, let LinguaVoice detect the language and translate it instantly.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg></span>
+            <h3>Listen to translations</h3>
+            <p>Hear translations read aloud with adjustable voice and speaking speed.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 3"/></svg></span>
+            <h3>Translation history</h3>
+            <p>Every translation is saved to your account. Search, filter by language and delete anytime.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>
+            <h3>Personal dashboard</h3>
+            <p>See your activity at a glance: totals, voice vs. text usage and your most-used languages.</p>
+          </article>
+          <article class="feature-card">
+            <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+            <h3>Private by design</h3>
+            <p>Encrypted passwords, protected accounts, and voice recordings are never stored by default.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section how" id="how-it-works">
+      <div class="container">
+        <div class="section-head">
+          <span class="kicker">How it works</span>
+          <h2>From your voice to their language in four steps</h2>
+        </div>
+        <ol class="steps">
+          <li class="step"><h3>Choose your languages</h3><p>Pick the language you speak and the one you want to translate into.</p></li>
+          <li class="step"><h3>Speak or type</h3><p>Press the microphone and talk, or type your message into the text box.</p></li>
+          <li class="step"><h3>AI translates</h3><p>Your speech is transcribed and translated securely by our AI services.</p></li>
+          <li class="step"><h3>Listen and share</h3><p>Play the translation aloud, copy it, or find it later in your history.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <div class="container">
+      <section class="cta" aria-labelledby="cta-title">
+        <h2 id="cta-title">Start your first conversation today</h2>
+        <p>Create a free account and translate your first phrase in under a minute.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary btn-lg" href="register.html">Create free account</a>
+          <a class="btn btn-ghost btn-lg" href="login.html">I already have an account</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <a class="logo" href="index.html">
+        <span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg></span>
+        LinguaVoice
+      </a>
+      <span>&copy; <span data-year></span> LinguaVoice</span>
+      <span class="api-status" data-api-status data-state="checking" role="status" aria-live="polite"><span data-api-status-text>Checking API…</span></span>
+    </div>
+  </footer>
+</body>
+</html>

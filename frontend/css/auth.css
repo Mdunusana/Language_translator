@@ -1,0 +1,35 @@
+/* Login and registration pages: brand panel + form card. */
+
+.auth-page { min-height: 100vh; display: grid; background: var(--surface); }
+@media (min-width: 960px) { .auth-page { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+
+.auth-brand {
+  display: none; position: relative; overflow: hidden; color: var(--white);
+  padding: var(--space-7);
+  background:
+    radial-gradient(700px 420px at 90% 0%, rgba(139, 92, 246, 0.4), transparent 60%),
+    radial-gradient(600px 400px at 0% 100%, rgba(91, 91, 246, 0.35), transparent 60%),
+    var(--navy-900);
+}
+@media (min-width: 960px) { .auth-brand { display: flex; flex-direction: column; justify-content: space-between; } }
+.auth-brand h2 { font-size: var(--fs-2xl); font-weight: 800; max-width: 26rem; }
+.auth-brand p { margin-top: var(--space-4); max-width: 28rem; color: rgba(255, 255, 255, 0.72); }
+.auth-points { display: grid; gap: var(--space-3); margin: var(--space-6) 0 0; padding: 0; list-style: none; }
+.auth-points li { display: flex; gap: var(--space-3); align-items: center; color: rgba(255, 255, 255, 0.85); font-size: var(--fs-sm); }
+.auth-points svg { flex: none; width: 20px; height: 20px; color: #a5a4ff; }
+.auth-brand small { color: rgba(255, 255, 255, 0.5); }
+
+.auth-main { display: flex; flex-direction: column; padding: var(--space-5) var(--space-4); }
+@media (min-width: 640px) { .auth-main { padding: var(--space-6); } }
+.auth-main .logo { align-self: flex-start; }
+@media (min-width: 960px) { .auth-main > .logo { display: none; } }
+
+.auth-card { width: 100%; max-width: 420px; margin: auto; padding-block: var(--space-6); }
+.auth-card h1 { font-size: var(--fs-2xl); font-weight: 800; }
+.auth-card .lead { margin-top: var(--space-2); margin-bottom: var(--space-6); color: var(--text-muted); }
+.auth-switch { margin-top: var(--space-5); text-align: center; font-size: var(--fs-sm); color: var(--text-muted); }
+.auth-switch a, .text-link { color: var(--accent); font-weight: 600; }
+.auth-switch a:hover, .text-link:hover { text-decoration: underline; }
+.back-home { margin-top: var(--space-3); text-align: center; font-size: var(--fs-sm); }
+.back-home a { color: var(--text-muted); }
+.back-home a:hover { color: var(--text); }

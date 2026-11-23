@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profile &amp; settings — LinguaVoice</title>
+  <meta name="theme-color" content="#0b1736">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script type="module" src="js/pages/profile.js"></script>
+</head>
+<body class="app-body">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header data-app-shell></header>
+
+  <main class="app-main" id="main">
+    <div class="container">
+      <div class="page-header">
+        <h1>Profile &amp; settings</h1>
+        <p>Manage your account details and password.</p>
+      </div>
+
+      <div class="card-grid">
+        <section class="card card-wide" aria-labelledby="overview-title">
+          <div class="card-header">
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+            <div><h2 id="overview-title">Account overview</h2></div>
+          </div>
+          <dl class="meta-list">
+            <div><dt>Member since</dt><dd class="skeleton" data-field="memberSince">—</dd></div>
+            <div><dt>Default languages</dt><dd class="skeleton" data-field="languages">—</dd></div>
+            <div><dt>Speech speed</dt><dd class="skeleton" data-field="speechSpeed">—</dd></div>
+          </dl>
+          <p class="note">You'll be able to change your default languages and speech speed here once the translator is available.</p>
+        </section>
+
+        <section class="card" aria-labelledby="details-title">
+          <div class="card-header">
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+            <div><h2 id="details-title">Personal details</h2><p>Your name and sign-in email.</p></div>
+          </div>
+          <form class="form" id="profile-form" novalidate>
+            <div class="alert" data-form-alert hidden></div>
+            <div class="field">
+              <label for="fullName">Full name</label>
+              <input class="input" id="fullName" name="fullName" type="text" autocomplete="name"
+                     required minlength="2" maxlength="100" aria-describedby="fullName-error" disabled>
+              <p class="field-error" id="fullName-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input class="input" id="email" name="email" type="email" autocomplete="email" inputmode="email"
+                     required maxlength="255" aria-describedby="email-error" disabled>
+              <p class="field-error" id="email-error" hidden></p>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit" disabled><span data-label>Save changes</span></button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="password-title">
+          <div class="card-header">
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+            <div><h2 id="password-title">Change password</h2><p>Use at least 8 characters, with a letter and a number.</p></div>
+          </div>
+          <form class="form" id="password-form" novalidate>
+            <div class="alert" data-form-alert hidden></div>
+            <div class="field">
+              <label for="currentPassword">Current password</label>
+              <div class="input-group">
+                <input class="input" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password"
+                       required maxlength="200" aria-describedby="currentPassword-error">
+                <button class="input-addon" type="button" data-password-toggle aria-controls="currentPassword" aria-pressed="false" aria-label="Show password">
+                  <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.7 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A16.6 16.6 0 0 0 2 12s3.5 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></svg>
+                </button>
+              </div>
+              <p class="field-error" id="currentPassword-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="newPassword">New password</label>
+              <div class="input-group">
+                <input class="input" id="newPassword" name="newPassword" type="password" autocomplete="new-password"
+                       required minlength="8" maxlength="72" aria-describedby="newPassword-error">
+                <button class="input-addon" type="button" data-password-toggle aria-controls="newPassword" aria-pressed="false" aria-label="Show password">
+                  <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.7 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A16.6 16.6 0 0 0 2 12s3.5 7 10 7a10 10 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m2 2 20 20"/></svg>
+                </button>
+              </div>
+              <p class="field-error" id="newPassword-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="confirmNewPassword">Confirm new password</label>
+              <input class="input" id="confirmNewPassword" name="confirmNewPassword" type="password" autocomplete="new-password"
+                     required maxlength="72" aria-describedby="confirmNewPassword-error">
+              <p class="field-error" id="confirmNewPassword-error" hidden></p>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit"><span data-label>Update password</span></button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

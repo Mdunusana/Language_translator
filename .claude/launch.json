@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["frontend/dev-server.mjs", "--port", "5500"],
+      "port": 5500
+    },
+    {
+      "name": "frontend-verify",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["frontend/dev-server.mjs", "--port", "5501", "--api", "http://localhost:8082"],
+      "port": 5501
+    }
+  ]
+}
