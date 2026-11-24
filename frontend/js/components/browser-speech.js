@@ -1,5 +1,5 @@
 // Read-aloud using the browser's built-in speech synthesis.
-// This is the documented FALLBACK; Phase 5 adds server-side text-to-speech as the primary engine.
+// This is the FALLBACK, used when the server has no text-to-speech voice for a language.
 // A voice is only offered when the browser actually has one for the language.
 
 const synth = 'speechSynthesis' in window ? window.speechSynthesis : null;
@@ -25,32 +25,49 @@ export function voicesReady() {
   });
 }
 
-export function findVoice(languageCode) {
-  if (!synth || !languageCode) return null;
+/** Browser voices for a LinguaVoice language code, local (offline) voices first. */
+export function browserVoicesFor(languageCode) {
+  if (!synth || !languageCode) return [];
   const prefix = (VOICE_PREFIX[languageCode] ?? languageCode).toLowerCase();
-  const matches = voices.filter((voice) => voice.lang.toLowerCase().replace('_', '-').startsWith(prefix));
-  return matches.find((voice) => voice.localService) ?? matches[0] ?? null;
-}
-
-export function isSpeaking() {
-  return Boolean(synth?.speaking);
+  return voices
+    .filter((voice) => {
+      const lang = voice.lang.toLowerCase().replace('_', '-');
+      return lang === prefix || lang.startsWith(`${prefix}-`);
+    })
+    .sort((a, b) => Number(b.localService) - Number(a.localService));
 }
 
 export function stopSpeaking() {
   synth?.cancel();
 }
 
+export function pauseSpeaking() {
+  synth?.pause();
+}
+
+export function resumeSpeaking() {
+  synth?.resume();
+}
+
+/** True when a pause actually took effect (or nothing is speaking any more). */
+export function isSpeechPaused() {
+  return !synth || synth.paused || !synth.speaking;
+}
+
 /**
- * Speaks `text` in `languageCode`. Returns false if no voice is available.
- * @param {{onEnd?: () => void}} [handlers]
+ * Speaks `text`. Returns false if no browser voice is available for the language.
+ * @param {{voiceURI?: string, rate?: number, onStart?: () => void, onEnd?: () => void}} [options]
  */
-export function speak(text, languageCode, { onEnd } = {}) {
-  const voice = findVoice(languageCode);
+export function speak(text, languageCode, { voiceURI, rate = 1, onStart, onEnd } = {}) {
+  const candidates = browserVoicesFor(languageCode);
+  const voice = candidates.find((item) => item.voiceURI === voiceURI) ?? candidates[0];
   if (!voice) return false;
   synth.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.voice = voice;
   utterance.lang = voice.lang;
+  utterance.rate = rate;
+  utterance.onstart = () => onStart?.();
   utterance.onend = () => onEnd?.();
   utterance.onerror = () => onEnd?.();
   synth.speak(utterance);

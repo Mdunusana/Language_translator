@@ -76,6 +76,13 @@ app:
       region: ${STT_REGION:}
       endpoint: ${STT_ENDPOINT:}
       timeout-seconds: 30
+    text-to-speech:
+      # azure | google | none. Without it, translations are read aloud with the browser's own voices.
+      provider: ${TTS_PROVIDER:none}
+      api-key: ${TTS_API_KEY:}
+      region: ${TTS_REGION:}
+      endpoint: ${TTS_ENDPOINT:}
+      timeout-seconds: 30
   rate-limit:
     ai-requests-per-minute: ${AI_RATE_LIMIT_PER_MINUTE:30}
 

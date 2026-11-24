@@ -2,14 +2,17 @@ import { api } from '../api/client.js';
 import { requireAuth, session } from '../auth/session.js';
 import { renderAppShell } from '../components/app-shell.js';
 import { isBrowserRecognitionSupported, recognizeOnce, stopBrowserRecognition } from '../components/browser-recognition.js';
-import { findVoice, speak, stopSpeaking, voicesReady } from '../components/browser-speech.js';
+import { browserVoicesFor, voicesReady } from '../components/browser-speech.js';
 import { isRecordingSupported, VoiceRecorder } from '../components/recorder.js';
 import { hideAlert, showAlert, withBusyButton } from '../components/forms.js';
+import { SpeechPlayer } from '../components/speech-player.js';
 import { showToast } from '../components/toast.js';
 
 const MAX_LENGTH = 5000;
 const AUTO = 'auto';
 const LAST_LANGUAGES_KEY = 'linguavoice.lastLanguages';
+const SPEED_KEY = 'linguavoice.speechSpeed';
+const VOICE_KEY_PREFIX = 'linguavoice.voice.';
 
 const root = document.querySelector('[data-translator]');
 const els = {
@@ -27,6 +30,9 @@ const els = {
   detected: root.querySelector('[data-detected]'),
   copy: root.querySelector('[data-copy]'),
   listen: root.querySelector('[data-listen]'),
+  stop: root.querySelector('[data-stop]'),
+  voiceSelect: root.querySelector('[data-voice-select]'),
+  speedSelect: root.querySelector('[data-speed-select]'),
   unavailable: document.querySelector('[data-unavailable]'),
   provider: document.querySelector('[data-provider]'),
   inputPanel: root.querySelector('.panel-input'),
@@ -47,7 +53,17 @@ const state = {
   recorder: null,
   /** 'idle' | 'recording' | 'listening-browser' | 'processing' */
   voiceState: 'idle',
+  /** How the current translation is read aloud: 'server' | 'browser' | null (no voice available). */
+  speechMode: null,
+  /** Server voice lists per language code, fetched once per page load. */
+  serverVoices: new Map(),
+  serverVoiceProvider: null,
 };
+
+const player = new SpeechPlayer({
+  onStateChange: updatePlayButton,
+  onError: (error) => showToast(error.message, 'error', 4000),
+});
 
 const MAX_RECORDING_SECONDS = 60;
 
@@ -106,7 +122,7 @@ function setControlsEnabled(enabled) {
 /* ---------- output panel ---------- */
 
 function clearOutput() {
-  stopSpeaking();
+  player.stop();
   state.result = null;
   els.output.replaceChildren(Object.assign(document.createElement('span'), {
     className: 'placeholder', textContent: 'Translation will appear here',
@@ -115,7 +131,7 @@ function clearOutput() {
   els.detected.hidden = true;
   els.outputStatus.textContent = '';
   els.copy.disabled = true;
-  updateListenButton();
+  prepareSpeech(null);
 }
 
 function renderResult(result, statusText = 'Saved to your history') {
@@ -132,21 +148,122 @@ function renderResult(result, statusText = 'Saved to your history') {
     els.detected.hidden = true;
   }
   els.outputStatus.textContent = statusText;
-  updateListenButton();
+  prepareSpeech(result.targetLanguage);
 }
 
-function updateListenButton() {
-  els.listen.setAttribute('aria-pressed', 'false');
-  if (!state.result) {
-    els.listen.disabled = true;
-    els.listen.title = 'Listen';
+/* ---------- text-to-speech ---------- */
+
+function readStored(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function store(key, value) {
+  try { localStorage.setItem(key, value); } catch { /* not important */ }
+}
+
+/** Speed: last choice on this device → account preference → 1×, snapped to the nearest option. */
+function initSpeed() {
+  const preferred = Number(readStored(SPEED_KEY) ?? session.user()?.preferences?.speechSpeed ?? 1);
+  const options = [...els.speedSelect.options].map((option) => Number(option.value));
+  const nearest = options.reduce((best, value) => (Math.abs(value - preferred) < Math.abs(best - preferred) ? value : best), 1);
+  els.speedSelect.value = String(nearest);
+}
+
+async function serverVoicesFor(code) {
+  if (!state.serverVoices.has(code)) {
+    const response = await api.voices(code);
+    state.serverVoices.set(code, response.available ? response.voices : []);
+    if (response.provider) state.serverVoiceProvider = response.provider;
+  }
+  return state.serverVoices.get(code);
+}
+
+/**
+ * Chooses how to read `code` aloud and fills the voice list:
+ * the server's voices when it has them, otherwise the browser's, otherwise nothing (button disabled).
+ */
+async function prepareSpeech(code) {
+  player.stop();
+  els.voiceSelect.replaceChildren();
+  state.speechMode = null;
+  if (!code) {
+    updatePlayButton('idle');
     return;
   }
-  const hasVoice = Boolean(findVoice(state.result.targetLanguage));
-  els.listen.disabled = !hasVoice;
-  els.listen.title = hasVoice
-    ? 'Listen (uses your browser’s voice)'
-    : `Your browser has no ${languageName(state.result.targetLanguage)} voice`;
+
+  let options = [];
+  const language = state.languages.find((item) => item.code === code);
+  if (language?.voiceOutput) {
+    try {
+      const voices = await serverVoicesFor(code);
+      if (voices.length) {
+        state.speechMode = 'server';
+        options = voices.map((voice) => ({ value: voice.id, label: `${voice.name} · ${voice.gender} · ${voice.locale}` }));
+      }
+    } catch {
+      // Server voices unavailable right now: fall through to the browser's voices.
+    }
+  }
+  if (!state.speechMode) {
+    await voicesReady();
+    const voices = browserVoicesFor(code);
+    if (voices.length) {
+      state.speechMode = 'browser';
+      options = voices.map((voice) => ({ value: voice.voiceURI, label: `${voice.name} (browser)` }));
+    }
+  }
+  if (state.result?.targetLanguage !== code) return; // the result changed while voices were loading
+
+  for (const { value, label } of options) {
+    els.voiceSelect.append(Object.assign(document.createElement('option'), { value, textContent: label }));
+  }
+  if (!options.length) {
+    els.voiceSelect.append(Object.assign(document.createElement('option'), { value: '', textContent: 'No voice available' }));
+  }
+  const remembered = readStored(VOICE_KEY_PREFIX + code);
+  if (remembered && options.some((option) => option.value === remembered)) els.voiceSelect.value = remembered;
+  updatePlayButton(player.state);
+}
+
+function updatePlayButton(playerState) {
+  const name = state.result ? languageName(state.result.targetLanguage) : '';
+  const available = Boolean(state.result && state.speechMode);
+  els.listen.dataset.state = playerState;
+  els.listen.disabled = !available;
+  els.voiceSelect.disabled = !available || playerState === 'loading';
+  els.speedSelect.disabled = !available;
+  els.stop.hidden = playerState === 'idle';
+
+  const source = state.speechMode === 'server'
+    ? `voice by ${state.serverVoiceProvider ?? 'the server'}`
+    : 'your browser’s voice';
+  const label = !state.result ? 'Listen to translation'
+    : !available ? `No ${name} voice is available`
+    : { idle: `Listen in ${name} (${source})`, loading: 'Preparing audio… (press to cancel)', playing: 'Pause', paused: 'Resume' }[playerState];
+  els.listen.title = label;
+  els.listen.setAttribute('aria-label', label);
+}
+
+async function onListenClick() {
+  if (!state.result || !state.speechMode) return;
+  switch (player.state) {
+    case 'playing': player.pause(); return;
+    case 'paused': player.resume(); return;
+    case 'loading': player.stop(); return;
+    default:
+      try {
+        await player.play({
+          mode: state.speechMode,
+          text: state.result.translatedText,
+          language: state.result.targetLanguage,
+          voice: els.voiceSelect.value || undefined,
+          speed: Number(els.speedSelect.value),
+        });
+      } catch (error) {
+        const fieldMessage = error.fieldErrors ? Object.values(error.fieldErrors)[0] : null;
+        showToast(fieldMessage ?? error.message, 'error', 4500);
+      }
+  }
 }
 
 /* ---------- input ---------- */
@@ -174,7 +291,7 @@ async function translate() {
     return;
   }
 
-  stopSpeaking();
+  player.stop();
   els.outputPanel.dataset.state = 'loading';
   els.outputStatus.textContent = 'Translating…';
   els.detected.hidden = true;
@@ -226,23 +343,6 @@ async function copyTranslation() {
     showToast('Translation copied to clipboard');
   } catch {
     showToast('Could not copy. Select the text and copy it manually.', 'error');
-  }
-}
-
-function toggleListen() {
-  if (!state.result) return;
-  if (els.listen.getAttribute('aria-pressed') === 'true') {
-    stopSpeaking();
-    els.listen.setAttribute('aria-pressed', 'false');
-    return;
-  }
-  const started = speak(state.result.translatedText, state.result.targetLanguage, {
-    onEnd: () => els.listen.setAttribute('aria-pressed', 'false'),
-  });
-  if (started) {
-    els.listen.setAttribute('aria-pressed', 'true');
-  } else {
-    showToast(`Your browser has no ${languageName(state.result.targetLanguage)} voice.`, 'error');
   }
 }
 
@@ -305,7 +405,7 @@ async function onMicClick() {
     showAlert(root, 'Choose a target language that is different from the language you will speak.');
     return;
   }
-  stopSpeaking();
+  player.stop();
   if (mode === 'server') await startServerRecording();
   else if (mode === 'browser') await startBrowserRecognition();
 }
@@ -440,13 +540,24 @@ function bindEvents() {
   els.swap.addEventListener('click', swapLanguages);
   els.translate.addEventListener('click', translate);
   els.copy.addEventListener('click', copyTranslation);
-  els.listen.addEventListener('click', toggleListen);
+  els.listen.addEventListener('click', onListenClick);
+  els.stop.addEventListener('click', () => player.stop());
+  els.voiceSelect.addEventListener('change', () => {
+    player.stop();
+    if (state.result) store(VOICE_KEY_PREFIX + state.result.targetLanguage, els.voiceSelect.value);
+  });
+  els.speedSelect.addEventListener('change', () => {
+    player.stop();
+    store(SPEED_KEY, els.speedSelect.value);
+  });
+  window.addEventListener('pagehide', () => player.stop());
 }
 
 async function init() {
   bindEvents();
   updateCount();
-  voicesReady().then(updateListenButton);
+  initSpeed();
+  updatePlayButton('idle');
 
   let catalog;
   try {

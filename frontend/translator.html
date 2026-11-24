@@ -91,13 +91,31 @@
             <span class="detected-chip" data-detected hidden></span>
             <!-- No whitespace inside: the output box uses white-space: pre-wrap to keep line breaks in translations. -->
             <div class="panel-text output-text" data-output role="region" aria-live="polite" aria-label="Translation"><span class="placeholder">Translation will appear here</span></div>
-            <div class="panel-footer">
+            <div class="output-footer">
               <span class="output-status" data-output-status></span>
-              <div class="panel-actions">
-                <button class="icon-btn" type="button" data-listen aria-label="Listen to translation" title="Listen" disabled>
-                  <svg class="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
-                  <svg class="icon-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+              <div class="speech-bar" role="group" aria-label="Listen to the translation">
+                <!-- data-state: idle | loading | playing | paused -->
+                <button class="play-btn" type="button" data-listen data-state="idle" aria-label="Listen to translation" disabled>
+                  <svg class="icon-listen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+                  <svg class="icon-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                  <svg class="icon-resume" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z"/></svg>
+                  <span class="play-spinner" aria-hidden="true"></span>
                 </button>
+                <button class="icon-btn" type="button" data-stop aria-label="Stop" title="Stop" hidden>
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                </button>
+                <label class="visually-hidden" for="voiceSelect">Voice</label>
+                <select class="mini-select" id="voiceSelect" data-voice-select disabled><option>Voice</option></select>
+                <label class="visually-hidden" for="speedSelect">Speaking speed</label>
+                <select class="mini-select speed-select" id="speedSelect" data-speed-select title="Speaking speed">
+                  <option value="0.5">0.5×</option>
+                  <option value="0.75">0.75×</option>
+                  <option value="1" selected>1×</option>
+                  <option value="1.25">1.25×</option>
+                  <option value="1.5">1.5×</option>
+                  <option value="2">2×</option>
+                </select>
+                <span class="speech-bar-spacer"></span>
                 <button class="icon-btn" type="button" data-copy aria-label="Copy translation" title="Copy" disabled>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>

@@ -63,8 +63,11 @@ export function onUnauthorized(handler) {
  * @param {number} [options.timeoutMs]
  * @throws {ApiError}
  */
-export async function apiRequest(path, { method = 'GET', body, auth = true, timeoutMs = config.requestTimeoutMs } = {}) {
-  const headers = { Accept: 'application/json' };
+export async function apiRequest(path, {
+  method = 'GET', body, auth = true, timeoutMs = config.requestTimeoutMs, responseType = 'json',
+} = {}) {
+  // Binary endpoints (audio) also accept JSON so that errors still arrive as the standard ApiError body.
+  const headers = { Accept: responseType === 'blob' ? 'audio/mpeg, application/json' : 'application/json' };
   const isMultipart = body instanceof FormData;
   if (body !== undefined && !isMultipart) headers['Content-Type'] = 'application/json';
 
@@ -92,6 +95,9 @@ export async function apiRequest(path, { method = 'GET', body, auth = true, time
   }
 
   const isJson = (response.headers.get('Content-Type') ?? '').includes('application/json');
+  if (response.ok && responseType === 'blob') {
+    return response.blob();
+  }
   const payload = isJson ? await response.json().catch(() => null) : null;
 
   if (!response.ok) {
@@ -122,4 +128,9 @@ export const api = {
   translateText: (data) => apiRequest('/translations/text', { method: 'POST', body: data, timeoutMs: 25000 }),
   /** @param {FormData} form  audio (WAV), sourceLanguage, targetLanguage */
   translateVoice: (form) => apiRequest('/translations/voice', { method: 'POST', body: form, timeoutMs: 60000 }),
+
+  // SpeechController
+  voices: (language) => apiRequest(`/speech/voices?language=${encodeURIComponent(language)}`),
+  /** @returns {Promise<Blob>} MP3 audio */
+  synthesize: (data) => apiRequest('/speech/synthesize', { method: 'POST', body: data, timeoutMs: 45000, responseType: 'blob' }),
 };

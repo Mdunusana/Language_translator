@@ -23,27 +23,34 @@ public class LanguageService {
 
     private final TranslationProvider translationProvider;
     private final SpeechToTextProvider speechToTextProvider;
+    private final SpeechService speechService;
 
-    public LanguageService(TranslationProvider translationProvider, SpeechToTextProvider speechToTextProvider) {
+    public LanguageService(TranslationProvider translationProvider, SpeechToTextProvider speechToTextProvider,
+                           SpeechService speechService) {
         this.translationProvider = translationProvider;
         this.speechToTextProvider = speechToTextProvider;
+        this.speechService = speechService;
     }
 
     public LanguagesResponse listLanguages() {
         if (!translationProvider.isConfigured()) {
-            return new LanguagesResponse(false, null, false, null, List.of(), NOT_CONFIGURED_MESSAGE);
+            return new LanguagesResponse(false, null, false, null, false, null, List.of(), NOT_CONFIGURED_MESSAGE);
         }
         Set<String> translatable = translationProvider.supportedLanguages();
         Set<String> voiceInput = speechToTextProvider.isConfigured() ? speechToTextProvider.supportedLanguages() : Set.of();
+        Set<String> voiceOutput = speechService.languagesWithVoices();
 
         List<LanguageResponse> languages = LanguageCatalog.LANGUAGES.stream()
                 .filter(language -> translatable.contains(language.code()))
                 .map(language -> new LanguageResponse(language.code(), language.name(), language.nativeName(),
-                        true, voiceInput.contains(language.code()), false))
+                        true, voiceInput.contains(language.code()), voiceOutput.contains(language.code())))
                 .toList();
-        boolean voiceAvailable = languages.stream().anyMatch(LanguageResponse::voiceInput);
+        boolean inputAvailable = languages.stream().anyMatch(LanguageResponse::voiceInput);
+        boolean outputAvailable = languages.stream().anyMatch(LanguageResponse::voiceOutput);
         return new LanguagesResponse(true, translationProvider.displayName(),
-                voiceAvailable, voiceAvailable ? speechToTextProvider.displayName() : null, languages, null);
+                inputAvailable, inputAvailable ? speechToTextProvider.displayName() : null,
+                outputAvailable, outputAvailable ? speechService.providerName() : null,
+                languages, null);
     }
 
     /**

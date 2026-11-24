@@ -89,8 +89,35 @@ Legend: ✅ done and verified · 🟡 done, not yet verified · ⬜ pending
 - ⬜ **Live speech recognition with a real provider**: needs `STT_PROVIDER` and a key, plus a real microphone test in your browser
 - ⬜ Frontend automated tests for the recorder and WAV encoder (Phase 7; the encoder was checked byte by byte with Node this phase)
 
-## Phase 5 — Text-to-speech ⬜
-`TextToSpeechProvider` · `/api/speech/synthesize` · player (play/pause/stop, voice, speed) · fallback
+## Phase 5 — Text-to-speech ✅ (live provider pending)
+- ✅ `TextToSpeechProvider` with **Azure AI Speech** (SSML → MP3) and **Google Cloud Text-to-Speech** (MP3) adapters (`TTS_PROVIDER`)
+- ✅ Voices come from the provider's **live voice list** (cached for 24 h):
+  - grouped by language, with the natural default first (en-US, pt-BR, …);
+  - Mandarin means mainland Simplified only;
+  - Google voice types that don't support speed changes are left out.
+- ✅ SSML safety: the text is XML-escaped (including illegal control characters), and voice ids must come from the provider's own list, so a request can't inject SSML
+- ✅ `GET /api/speech/voices`, `POST /api/speech/synthesize`:
+  - audio is streamed and **never stored**;
+  - provider input limits are enforced (Google: 5000 bytes);
+  - the rate limit is shared with the other AI endpoints.
+- ✅ `GET /api/languages` reports `voiceOutput` per language, and keeps working (with no server voices advertised) if the voice list is temporarily unavailable
+- ✅ Player:
+  - one button for Listen / Pause / Resume, with a loading spinner (pressing it while loading cancels), plus Stop;
+  - voice picker and speed (0.5×–2×);
+  - speed defaults to the account's `speech_speed`; voice and speed are remembered per device;
+  - recent clips are cached in memory, so replay is instant and makes no new request;
+  - a clear message if the browser blocks autoplay.
+- ✅ Browser speech synthesis as the fallback when the server has no voice for a language. If neither has a voice, Listen is disabled and says why.
+- ✅ Backend tests: **112/112 passing**
+- ✅ Verified in the browser using the real Azure TTS adapter over HTTP against a **test-only** stand-in, with real mouse clicks. Checked:
+  - the request on the wire: chosen voice, `rate='+25%'`, MP3 output format, User-Agent;
+  - real audio playing, pausing, resuming, stopping and ending on its own;
+  - replay served from the cache (one synthesis request);
+  - the per-language fallbacks: isiZulu and Afrikaans on the server, French on the browser, isiXhosa disabled with an explanation;
+  - phone width.
+- ✅ Bug found and fixed: some browser voices fire `start` late. If the user paused before that, the late event flipped the UI back to "playing" and the next press paused again instead of resuming. Browser playback now goes through a `loading` state that only `start` can end, and a pause that doesn't take effect is detected and stopped cleanly.
+- ⬜ **Live synthesis with a real provider**: needs `TTS_PROVIDER` and a key; then listen to one translation
+- ⬜ Automated frontend tests for the player (Phase 7)
 
 ## Phase 6 — Dashboard and history ⬜
 Statistics and recent-activity endpoints · charts · history search, filter and delete · preferences editing

@@ -21,3 +21,6 @@ app:
     speech-to-text:
       provider: none
       api-key: ''
+    text-to-speech:
+      provider: none
+      api-key: ''

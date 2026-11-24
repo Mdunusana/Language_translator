@@ -9,6 +9,7 @@ import java.util.List;
  * @param translationAvailable false when no translation provider is configured; {@code message} says why
  * @param provider             attribution for the active translation provider
  * @param voiceInputProvider   attribution for the active speech-to-text provider, or null when none
+ * @param voiceOutputProvider  attribution for the active text-to-speech provider, or null when none
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record LanguagesResponse(
@@ -16,6 +17,8 @@ public record LanguagesResponse(
         String provider,
         boolean voiceInputAvailable,
         String voiceInputProvider,
+        boolean voiceOutputAvailable,
+        String voiceOutputProvider,
         List<LanguageResponse> languages,
         String message) {
 
