@@ -120,4 +120,6 @@ export const api = {
   // LanguageController / TranslationController
   languages: () => apiRequest('/languages'),
   translateText: (data) => apiRequest('/translations/text', { method: 'POST', body: data, timeoutMs: 25000 }),
+  /** @param {FormData} form  audio (WAV), sourceLanguage, targetLanguage */
+  translateVoice: (form) => apiRequest('/translations/voice', { method: 'POST', body: form, timeoutMs: 60000 }),
 };

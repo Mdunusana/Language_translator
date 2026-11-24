@@ -141,7 +141,8 @@ Before enabling a language for voice, we check the provider's current language l
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Browser audio formats differ (Chrome/Firefox record WebM/Opus, Safari records MP4/AAC) | STT rejects the upload | Detect `MediaRecorder.isTypeSupported`. If needed, re-encode to 16 kHz mono WAV in the browser with the Web Audio API before uploading |
+| Browser audio formats differ (Chrome/Firefox record WebM/Opus, Safari records MP4/AAC) | STT rejects the upload | **Resolved in Phase 4:** the browser always decodes its own recording and re-encodes it as 16 kHz mono 16-bit WAV (`recorder.js`, `wav.js`). The server accepts only that format and checks the bytes (`WavAudio`) |
+| Speech language gaps (isiXhosa unsupported by Azure Speech) | Users of that language can't speak to the server | Voice support is reported per language from the provider's documented list. Google supports `xh-ZA`, and otherwise the browser's own recognition is offered as a labelled fallback |
 | Limited speech support for isiZulu/isiXhosa | Voice features missing for key local languages | Build the language matrix from provider capabilities. Offer text translation and the browser TTS fallback |
 | Provider costs and quotas | Unexpected bills | Rate limiting, character and duration caps, free-tier keys during development |
 | Microphone requires a secure context | Recording fails over plain HTTP | `localhost` counts as secure for development. Deploy behind HTTPS |

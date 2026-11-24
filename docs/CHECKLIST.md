@@ -57,8 +57,37 @@ Legend: ✅ done and verified · 🟡 done, not yet verified · ⬜ pending
 - ⬜ **A live call to a real provider**: needs your Azure or Google key in `.env`. Then translate one phrase and confirm the result.
 - ⬜ Text-to-speech through the backend (Phase 5); the browser voice is the fallback until then
 
-## Phase 4 — Voice translation ⬜
-MediaRecorder UI · upload validation · `SpeechToTextProvider` · `/api/translations/voice` · Web Speech fallback · tests
+## Phase 4 — Voice translation ✅ (live provider pending)
+- ✅ Speech language support checked against provider docs:
+  - Azure Speech supports `af-ZA` and `zu-ZA` but **not isiXhosa**.
+  - Google v1 supports `af-ZA` and `zu-ZA`, and `xh-ZA` only on the `latest_long`/`latest_short` models.
+- ✅ `SpeechToTextProvider` with **Azure AI Speech** (REST for short audio) and **Google Speech-to-Text v1** adapters (`STT_PROVIDER`); no provider → 503 and a startup warning
+- ✅ Upload safety (`WavAudio`): the actual bytes are checked:
+  - RIFF/WAVE, PCM, 16 kHz, mono, 16-bit, 0.3–60 s;
+  - 10 MB multipart cap (413);
+  - audio held in memory only, never stored.
+- ✅ `POST /api/translations/voice`: validates languages against the speech provider's support, then recognise → translate → save as `VOICE`; 422 when no speech is heard
+- ✅ `GET /api/languages` now reports `voiceInput` per language, plus `voiceInputAvailable` and `voiceInputProvider`
+- ✅ Browser recorder: MediaRecorder captures in the browser's native format, the Web Audio API resamples it to 16 kHz mono, and it's encoded as WAV. This works the same in Chrome, Edge, Firefox and Safari.
+- ✅ Recording UI:
+  - mic button with a mode per language (server / browser fallback / choose a language / unavailable);
+  - permission request, a live timer with a 60 s auto-stop, a level meter, Stop & translate, Cancel and Esc;
+  - processing state; the recognised text fills the input; the microphone is released on stop, cancel or leaving the page.
+- ✅ Web Speech API fallback when the server can't recognise the language (e.g. isiXhosa with Azure), labelled as browser recognition with a privacy note
+- ✅ Friendly errors: microphone blocked, no microphone, microphone busy, unsupported browser, recording too short, no speech, provider failure
+- ✅ Backend tests: **98/98 passing**
+- ✅ Verified in the browser against real MySQL, using the real Azure translation and speech adapters over HTTP against a **test-only** stand-in. The microphone was replaced by a generated tone, and the button presses were real mouse clicks. Checked:
+  - the WAV on the wire: 16 kHz / mono / 16-bit, with the exact Azure Content-Type;
+  - the full flow to a `VOICE` record;
+  - the mode per language (isiXhosa → browser fallback);
+  - silence → 422 message; blocked mic; missing mic; Cancel (nothing uploaded);
+  - phone layout.
+- ✅ Bugs found and fixed:
+  1. Spring rejected Azure's documented `audio/wav; codecs=audio/pcm; samplerate=16000` Content-Type, so every Azure voice request would have failed. The header is now sent verbatim and the bytes are streamed.
+  2. The level meter's `AudioContext` was created after the permission prompt, so autoplay rules left it suspended (dead meter). It's now created during the click.
+  3. On phones, the recording buttons overflowed the panel.
+- ⬜ **Live speech recognition with a real provider**: needs `STT_PROVIDER` and a key, plus a real microphone test in your browser
+- ⬜ Frontend automated tests for the recorder and WAV encoder (Phase 7; the encoder was checked byte by byte with Node this phase)
 
 ## Phase 5 — Text-to-speech ⬜
 `TextToSpeechProvider` · `/api/speech/synthesize` · player (play/pause/stop, voice, speed) · fallback

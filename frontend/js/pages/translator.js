@@ -1,7 +1,9 @@
 import { api } from '../api/client.js';
 import { requireAuth, session } from '../auth/session.js';
 import { renderAppShell } from '../components/app-shell.js';
+import { isBrowserRecognitionSupported, recognizeOnce, stopBrowserRecognition } from '../components/browser-recognition.js';
 import { findVoice, speak, stopSpeaking, voicesReady } from '../components/browser-speech.js';
+import { isRecordingSupported, VoiceRecorder } from '../components/recorder.js';
 import { hideAlert, showAlert, withBusyButton } from '../components/forms.js';
 import { showToast } from '../components/toast.js';
 
@@ -27,13 +29,27 @@ const els = {
   listen: root.querySelector('[data-listen]'),
   unavailable: document.querySelector('[data-unavailable]'),
   provider: document.querySelector('[data-provider]'),
+  inputPanel: root.querySelector('.panel-input'),
+  mic: root.querySelector('[data-mic]'),
+  voiceOverlay: root.querySelector('[data-voice-overlay]'),
+  voiceLabel: root.querySelector('[data-voice-label]'),
+  voiceTimer: root.querySelector('[data-voice-timer]'),
+  voiceStop: root.querySelector('[data-voice-stop]'),
+  voiceCancel: root.querySelector('[data-voice-cancel]'),
+  levelMeter: root.querySelector('.level-meter'),
 };
 
 const state = {
   languages: [],
   /** Last successful translation; null when the output panel is empty. */
   result: null,
+  /** Active VoiceRecorder while recording with the server-side recogniser. */
+  recorder: null,
+  /** 'idle' | 'recording' | 'listening-browser' | 'processing' */
+  voiceState: 'idle',
 };
+
+const MAX_RECORDING_SECONDS = 60;
 
 /* ---------- helpers ---------- */
 
@@ -102,7 +118,7 @@ function clearOutput() {
   updateListenButton();
 }
 
-function renderResult(result) {
+function renderResult(result, statusText = 'Saved to your history') {
   state.result = result;
   els.output.textContent = result.translatedText; // textContent: provider output is never parsed as HTML
   els.outputPanel.dataset.state = 'ready';
@@ -115,7 +131,7 @@ function renderResult(result) {
   } else {
     els.detected.hidden = true;
   }
-  els.outputStatus.textContent = 'Saved to your history';
+  els.outputStatus.textContent = statusText;
   updateListenButton();
 }
 
@@ -193,6 +209,7 @@ function swapLanguages() {
   els.source.value = els.target.value;
   els.target.value = source;
   rememberLanguages();
+  updateMicButton();
 
   if (previousOutput) {
     els.input.value = previousOutput;
@@ -229,6 +246,158 @@ function toggleListen() {
   }
 }
 
+/* ---------- voice input ---------- */
+
+/**
+ * How voice input works for the selected source language:
+ *  'server'          recorded here, recognised by the server's speech provider (primary)
+ *  'browser'         recognised by the browser's own Web Speech API (fallback)
+ *  'needs-language'  "Detect language" is selected; speech recognition needs the spoken language up front
+ *  'unavailable'     neither is possible
+ */
+function voiceMode(code) {
+  if (code === AUTO) return 'needs-language';
+  const language = state.languages.find((item) => item.code === code);
+  if (language?.voiceInput && isRecordingSupported()) return 'server';
+  if (isBrowserRecognitionSupported()) return 'browser';
+  return 'unavailable';
+}
+
+function updateMicButton() {
+  const code = els.source.value;
+  const mode = state.languages.length ? voiceMode(code) : 'unavailable';
+  els.mic.dataset.mode = mode;
+  els.mic.disabled = mode === 'unavailable' || state.voiceState !== 'idle';
+  const name = languageName(code);
+  els.mic.title = {
+    server: `Speak in ${name} (up to 1 minute)`,
+    browser: `Speak in ${name}. Uses your browser's speech recognition, which may send audio to your browser's provider.`,
+    'needs-language': 'Choose the language you will speak in the "From" list',
+    unavailable: `Voice input isn't available for ${name} in this browser`,
+  }[mode];
+  els.mic.setAttribute('aria-label', els.mic.title);
+}
+
+function setVoiceState(voiceState, label = '') {
+  state.voiceState = voiceState;
+  els.inputPanel.dataset.voiceState = voiceState;
+  els.voiceOverlay.hidden = voiceState === 'idle';
+  els.voiceLabel.textContent = label;
+  const busy = voiceState !== 'idle';
+  [els.input, els.translate, els.swap, els.source, els.target].forEach((el) => { el.disabled = busy; });
+  updateMicButton();
+}
+
+function formatSeconds(seconds) {
+  const whole = Math.floor(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+}
+
+async function onMicClick() {
+  hideAlert(root);
+  const mode = voiceMode(els.source.value);
+  if (mode === 'needs-language') {
+    showToast('Choose the language you will speak in the "From" list first.', 'info', 3500);
+    els.source.focus();
+    return;
+  }
+  if (els.source.value === els.target.value) {
+    showAlert(root, 'Choose a target language that is different from the language you will speak.');
+    return;
+  }
+  stopSpeaking();
+  if (mode === 'server') await startServerRecording();
+  else if (mode === 'browser') await startBrowserRecognition();
+}
+
+async function startServerRecording() {
+  const recorder = new VoiceRecorder({
+    maxSeconds: MAX_RECORDING_SECONDS,
+    onTick: (seconds) => { els.voiceTimer.textContent = formatSeconds(Math.min(seconds, MAX_RECORDING_SECONDS)); },
+    onLevel: (level) => els.levelMeter.style.setProperty('--level', level.toFixed(3)),
+    onLimit: () => {
+      showToast('Maximum length reached. Translating your recording…', 'info');
+      finishServerRecording();
+    },
+  });
+  els.voiceTimer.textContent = '0:00';
+  setVoiceState('recording', 'Waiting for microphone permission…');
+  try {
+    await recorder.start();
+  } catch (error) {
+    setVoiceState('idle');
+    showAlert(root, error.message);
+    return;
+  }
+  state.recorder = recorder;
+  els.voiceLabel.textContent = `Listening in ${languageName(els.source.value)}…`;
+  els.voiceStop.focus();
+}
+
+async function finishServerRecording() {
+  const recorder = state.recorder;
+  if (!recorder || state.voiceState !== 'recording') return;
+  state.recorder = null;
+  setVoiceState('processing', 'Processing your recording…');
+
+  try {
+    const { blob, durationSeconds } = await recorder.stop();
+    if (durationSeconds < 0.5) {
+      throw new Error('That was too short. Hold on a moment longer and speak your phrase.');
+    }
+    els.voiceLabel.textContent = 'Recognising speech and translating…';
+    els.outputPanel.dataset.state = 'loading';
+
+    const form = new FormData();
+    form.append('audio', blob, 'recording.wav');
+    form.append('sourceLanguage', els.source.value);
+    form.append('targetLanguage', els.target.value);
+    const result = await api.translateVoice(form);
+
+    els.input.value = result.originalText;
+    updateCount();
+    renderResult(result, 'Voice translation saved to your history');
+  } catch (error) {
+    clearOutput();
+    const fieldMessage = error.fieldErrors ? Object.values(error.fieldErrors)[0] : null;
+    showAlert(root, fieldMessage ?? error.message);
+  } finally {
+    setVoiceState('idle');
+  }
+}
+
+function cancelVoice() {
+  if (state.voiceState === 'recording') {
+    state.recorder?.cancel();
+    state.recorder = null;
+    setVoiceState('idle');
+    showToast('Recording cancelled', 'info');
+  } else if (state.voiceState === 'listening-browser') {
+    stopBrowserRecognition();
+  }
+}
+
+async function startBrowserRecognition() {
+  setVoiceState('listening-browser', `Listening in ${languageName(els.source.value)} (browser speech recognition)…`);
+  let transcript;
+  try {
+    transcript = await recognizeOnce(els.source.value);
+  } catch (error) {
+    setVoiceState('idle');
+    showAlert(root, error.message);
+    return;
+  }
+  setVoiceState('idle');
+  if (!transcript) {
+    showAlert(root, "We didn't catch anything. Press the microphone and try again.");
+    return;
+  }
+  els.input.value = transcript;
+  updateCount();
+  await translate();
+  if (state.result) els.outputStatus.textContent = 'Recognised by your browser · saved to your history';
+}
+
 /* ---------- start-up ---------- */
 
 function bindEvents() {
@@ -249,7 +418,21 @@ function bindEvents() {
     hideAlert(root);
     els.input.focus();
   });
-  els.source.addEventListener('change', rememberLanguages);
+  els.source.addEventListener('change', () => {
+    rememberLanguages();
+    updateMicButton();
+  });
+  els.mic.addEventListener('click', onMicClick);
+  els.voiceStop.addEventListener('click', () => {
+    if (state.voiceState === 'recording') finishServerRecording();
+    else if (state.voiceState === 'listening-browser') stopBrowserRecognition();
+  });
+  els.voiceCancel.addEventListener('click', cancelVoice);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && state.voiceState !== 'idle' && state.voiceState !== 'processing') cancelVoice();
+  });
+  // Release the microphone if the user leaves mid-recording.
+  window.addEventListener('pagehide', () => state.recorder?.cancel());
   els.target.addEventListener('change', () => {
     rememberLanguages();
     if (state.result) els.outputStatus.textContent = 'Language changed: translate again to update';
@@ -285,9 +468,12 @@ async function init() {
   fillSelect(els.source, state.languages);
   fillSelect(els.target, state.languages);
   chooseInitialLanguages();
-  els.provider.textContent = `Translations by ${catalog.provider}`;
+  els.provider.textContent = catalog.voiceInputProvider
+    ? `Translations by ${catalog.provider} · Speech by ${catalog.voiceInputProvider}`
+    : `Translations by ${catalog.provider}`;
   els.provider.hidden = false;
   setControlsEnabled(true);
+  updateMicButton();
   els.input.focus();
 }
 

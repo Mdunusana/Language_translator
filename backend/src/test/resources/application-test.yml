@@ -18,3 +18,6 @@ app:
     translation:
       provider: none     # tests replace the provider with Mockito mocks; no paid API is ever called
       api-key: ''
+    speech-to-text:
+      provider: none
+      api-key: ''

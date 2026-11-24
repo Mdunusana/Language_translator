@@ -21,7 +21,8 @@ class TranslationProviderConfigTest {
         AppProperties properties = new AppProperties("LinguaVoice", "test",
                 new AppProperties.Cors(List.of("http://localhost")),
                 new AppProperties.Jwt("x".repeat(32), 60, "linguavoice"),
-                new AppProperties.Ai(new AppProperties.Translation(provider, apiKey, "southafricanorth", "", 10)),
+                new AppProperties.Ai(new AppProperties.Translation(provider, apiKey, "southafricanorth", "", 10),
+                        new AppProperties.SpeechToText("none", "", "", "", 30)),
                 new AppProperties.RateLimit(30));
         return config.translationProvider(properties, RestClient.builder(), Clock.systemUTC());
     }

@@ -24,7 +24,7 @@
       <div class="page-header translator-header">
         <div>
           <h1>Translator</h1>
-          <p>Type or paste text, choose your languages and translate.</p>
+          <p>Type, paste or speak. Choose your languages and translate.</p>
         </div>
         <p class="provider-credit" data-provider hidden></p>
       </div>
@@ -49,12 +49,38 @@
         </div>
 
         <div class="panels">
-          <div class="panel">
+          <div class="panel panel-input" data-voice-state="idle">
             <label class="visually-hidden" for="sourceText">Text to translate</label>
-            <textarea class="panel-text" id="sourceText" maxlength="5000" placeholder="Enter text to translate…"
+            <textarea class="panel-text" id="sourceText" maxlength="5000" placeholder="Enter text to translate, or press the microphone and speak…"
                       aria-describedby="char-count shortcut-hint" disabled></textarea>
+
+            <!-- Shown while recording / processing. Announced to screen readers through the status line. -->
+            <div class="voice-overlay" data-voice-overlay hidden>
+              <div class="voice-status">
+                <span class="rec-dot" aria-hidden="true"></span>
+                <span data-voice-label role="status" aria-live="polite">Listening…</span>
+              </div>
+              <div class="voice-timer"><span data-voice-timer>0:00</span><span class="voice-max"> / 1:00</span></div>
+              <div class="level-meter" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+              </div>
+              <div class="voice-spinner" aria-hidden="true"></div>
+              <div class="voice-actions">
+                <button class="btn btn-secondary" type="button" data-voice-cancel>Cancel</button>
+                <button class="btn btn-primary" type="button" data-voice-stop>
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                  Stop &amp; translate
+                </button>
+              </div>
+            </div>
+
             <div class="panel-footer">
-              <span class="char-count" id="char-count" aria-live="polite"><span data-count>0</span> / 5000</span>
+              <div class="panel-actions">
+                <button class="mic-btn" type="button" data-mic aria-label="Speak to translate" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v3"/></svg>
+                </button>
+                <span class="char-count" id="char-count" aria-live="polite"><span data-count>0</span> / 5000</span>
+              </div>
               <button class="icon-btn" type="button" data-clear aria-label="Clear text" title="Clear" hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
               </button>

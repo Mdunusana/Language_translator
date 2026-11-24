@@ -44,8 +44,24 @@ public record AppProperties(
             @NotBlank String issuer) {
     }
 
-    /** External AI services. Speech-to-text and text-to-speech are added in Phases 4 and 5. */
-    public record Ai(@Valid @NotNull Translation translation) {
+    /** External AI services. Text-to-speech is added in Phase 5. */
+    public record Ai(@Valid @NotNull Translation translation, @Valid @NotNull SpeechToText speechToText) {
+    }
+
+    /**
+     * @param provider       {@code azure}, {@code google}, or {@code none}/blank to disable server-side voice input
+     * @param apiKey         Azure Speech key or Google Cloud API key (STT_API_KEY)
+     * @param region         Azure Speech resource region (e.g. {@code southafricanorth}); required for Azure
+     * @param endpoint       optional base-URL override; blank uses the provider's public endpoint
+     * @param timeoutSeconds upper bound for one recognition call
+     */
+    public record SpeechToText(
+            @Pattern(regexp = "(?i)^(|none|azure|google)$", message = "STT_PROVIDER must be azure, google or none")
+            String provider,
+            String apiKey,
+            String region,
+            String endpoint,
+            @Min(1) @Max(120) int timeoutSeconds) {
     }
 
     /**

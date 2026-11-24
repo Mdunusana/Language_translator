@@ -69,6 +69,13 @@ app:
       region: ${TRANSLATION_REGION:}
       endpoint: ${TRANSLATION_ENDPOINT:}
       timeout-seconds: 10
+    speech-to-text:
+      # azure | google | none. Without it, the browser's own speech recognition is offered as a fallback.
+      provider: ${STT_PROVIDER:none}
+      api-key: ${STT_API_KEY:}
+      region: ${STT_REGION:}
+      endpoint: ${STT_ENDPOINT:}
+      timeout-seconds: 30
   rate-limit:
     ai-requests-per-minute: ${AI_RATE_LIMIT_PER_MINUTE:30}
 

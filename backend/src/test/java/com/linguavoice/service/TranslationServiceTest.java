@@ -20,6 +20,7 @@ import com.linguavoice.entity.User;
 import com.linguavoice.exception.ApiException;
 import com.linguavoice.exception.RateLimitExceededException;
 import com.linguavoice.integration.AiProviderException;
+import com.linguavoice.integration.speech.SpeechToTextProvider;
 import com.linguavoice.integration.translation.TranslationProvider;
 import com.linguavoice.integration.translation.TranslationResult;
 import com.linguavoice.repository.TranslationRepository;
@@ -43,6 +44,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class TranslationServiceTest {
 
     @Mock private TranslationProvider provider;
+    @Mock private SpeechToTextProvider speechProvider;
     @Mock private LanguageService languageService;
     @Mock private TranslationRepository translationRepository;
     @Mock private UserRepository userRepository;
@@ -53,7 +55,8 @@ class TranslationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TranslationService(provider, languageService, translationRepository, userRepository, rateLimiter);
+        service = new TranslationService(provider, speechProvider, languageService, translationRepository,
+                userRepository, rateLimiter);
         ReflectionTestUtils.setField(user, "id", 7L);
         lenient().when(languageService.translatableLanguageCodes())
                 .thenReturn(new LinkedHashSet<>(List.of("en", "af", "zu", "fr")));
