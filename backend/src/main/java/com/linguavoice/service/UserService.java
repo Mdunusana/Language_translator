@@ -1,9 +1,12 @@
 package com.linguavoice.service;
 
 import com.linguavoice.dto.user.ChangePasswordRequest;
+import com.linguavoice.dto.user.UpdatePreferencesRequest;
 import com.linguavoice.dto.user.UpdateProfileRequest;
 import com.linguavoice.dto.user.UserResponse;
 import com.linguavoice.entity.User;
+import com.linguavoice.entity.UserPreference;
+import java.math.RoundingMode;
 import com.linguavoice.exception.ApiException;
 import com.linguavoice.repository.UserPreferenceRepository;
 import com.linguavoice.repository.UserRepository;
@@ -15,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 /** Profile and password management for the signed-in user. Every method works only on {@code userId}. */
 @Service
 public class UserService {
+
+    private static final String AUTO_DETECT = "auto";
 
     private final UserRepository userRepository;
     private final UserPreferenceRepository preferenceRepository;
@@ -62,6 +67,32 @@ public class UserService {
             throw ApiException.invalidField("newPassword", "New password must be different from the current one.");
         }
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+    }
+
+    /** Default languages and speaking speed used by the translator. */
+    @Transactional
+    public UserResponse updatePreferences(long userId, UpdatePreferencesRequest request) {
+        User user = loadUser(userId);
+        String source = request.preferredSourceLanguage();
+        String target = request.preferredTargetLanguage();
+        if (!AUTO_DETECT.equals(source) && !LanguageCatalog.contains(source)) {
+            throw ApiException.invalidField("preferredSourceLanguage", "Unknown language.");
+        }
+        if (!LanguageCatalog.contains(target)) {
+            throw ApiException.invalidField("preferredTargetLanguage", "Unknown language.");
+        }
+        if (source.equals(target)) {
+            throw ApiException.invalidField("preferredTargetLanguage",
+                    "Choose a target language that is different from the source language.");
+        }
+
+        UserPreference preference = preferenceRepository.findByUserId(userId)
+                .orElseGet(() -> UserPreference.defaultsFor(user));
+        preference.setPreferredSourceLanguage(source);
+        preference.setPreferredTargetLanguage(target);
+        preference.setSpeechSpeed(request.speechSpeed().setScale(2, RoundingMode.HALF_UP));
+        preferenceRepository.save(preference);
+        return UserResponse.from(user, preference);
     }
 
     /**

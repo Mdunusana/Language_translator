@@ -2,7 +2,7 @@
 
 LinguaVoice is a full-stack web application for talking across languages. You speak or type, the AI translates, and you can listen to the result.
 
-> **Status:** Phase 5 (text-to-speech) is complete. Real translation, speech recognition and server voices need provider keys (see step 2). See [docs/CHECKLIST.md](docs/CHECKLIST.md) for progress.
+> **Status:** Phase 6 (dashboard, history and preferences) is complete. Real translation, speech recognition and server voices need provider keys (see step 2). See [docs/CHECKLIST.md](docs/CHECKLIST.md) for progress.
 
 | Layer | Technology |
 |---|---|
@@ -69,7 +69,7 @@ Options: `--port 5500` sets the frontend port, and `--api http://localhost:8081`
 ```bash
 cd backend && mvn test
 ```
-112 tests use an in-memory H2 database in MySQL mode and run the real Flyway migrations. They need no MySQL server and make no AI provider calls: providers are replaced by Mockito mocks, and the Azure and Google adapters are tested against a mock HTTP server (`MockRestServiceServer`).
+132 tests use an in-memory H2 database in MySQL mode and run the real Flyway migrations. They need no MySQL server and make no AI provider calls: providers are replaced by Mockito mocks, and the Azure and Google adapters are tested against a mock HTTP server (`MockRestServiceServer`).
 
 | Suite | Covers |
 |---|---|
@@ -84,6 +84,9 @@ cd backend && mvn test
 | `VoiceTranslationControllerTest` | upload → recognition → translation → `VOICE` record (audio not stored), unsupported voice language, rejected audio, no speech (422), not configured (503), provider failure, missing parts, per-language `voiceInput` flags |
 | `WavAudioTest` | upload safety: bytes must be RIFF/WAVE, 16 kHz mono 16-bit PCM, 0.3–60 s; the file name and declared type are ignored |
 | `AzureSpeechToTextProviderTest`, `GoogleSpeechToTextProviderTest`, `SpeechProviderConfigTest` | exact speech API contracts, no-speech handling, isiXhosa only on Google's `latest_long` model, provider selection |
+| `HistoryControllerTest` | own history only, newest first; case-insensitive search with literal `%`/`_`; language and type filters; paging; parameter validation; **another user's record is 404 for read and delete**; clear affects only the caller |
+| `DashboardControllerTest` | totals, voice/text split, rolling 7 days, top languages (excluding `und` and other users), zero-filled daily buckets **in the caller's time zone**, recent activity |
+| `TimestampStorageTest` | regression: `created_at` holds real UTC even when the server runs in UTC+2 |
 | `SpeechControllerTest` | MP3 response with `no-store`, default and chosen voice and speed, rejected voices/languages/speeds, provider size limit, 503/502, voice list, `/api/languages` surviving a voice-list outage |
 | `AzureTextToSpeechProviderTest`, `GoogleTextToSpeechProviderTest` | voice-list filtering and grouping (no Cantonese for Mandarin, no voice types without speed control), exact SSML/JSON requests, **SSML injection is escaped**, base64 decoding, error mapping |
 | `HealthControllerTest`, `SchemaMigrationTest` | health check, 401 handling, CORS, database constraints |
@@ -104,6 +107,13 @@ All responses are JSON. Errors share one shape: `{ timestamp, status, error, mes
 | GET | `/api/users/profile` | Bearer | The signed-in user's profile and preferences | 200 |
 | PUT | `/api/users/profile` | Bearer | `{fullName, email}` | 200 |
 | PUT | `/api/users/password` | Bearer | `{currentPassword, newPassword, confirmNewPassword}` | 204 |
+| PUT | `/api/users/preferences` | Bearer | `{preferredSourceLanguage ("auto" or a code), preferredTargetLanguage, speechSpeed (0.50–2.00)}` | 200 |
+| GET | `/api/translations/history` | Bearer | Query: `search`, `language` (source or target), `type` (`TEXT`/`VOICE`), `page` (0-based), `size` (≤ 50). Returns `{items, page, size, totalItems, totalPages}`, newest first | 200 |
+| GET | `/api/translations/{id}` | Bearer | One of the caller's translations (another user's → 404) | 200 |
+| DELETE | `/api/translations/{id}` | Bearer | Deletes one of the caller's translations (another user's → 404) | 204 |
+| DELETE | `/api/translations/history` | Bearer | Clears the caller's whole history; returns `{deleted}` | 200 |
+| GET | `/api/dashboard/statistics?timezone=Africa/Johannesburg` | Bearer | Totals, voice/text split, last 7 days, top 5 languages with share, and a zero-filled daily count for 14 days (`days` up to 90) in the given IANA time zone | 200 |
+| GET | `/api/dashboard/recent-activity?limit=5` | Bearer | The caller's newest translations (limit 1–20) | 200 |
 | GET | `/api/languages` | Bearer | `{translationAvailable, provider, languages: [{code, name, nativeName, textTranslation, voiceInput, voiceOutput}], message?}`. Lists only languages the configured provider supports | 200 |
 | POST | `/api/translations/text` | Bearer | `{text (≤ 5000 chars), sourceLanguage ("auto" or a code), targetLanguage}`. Translates, saves to history, and returns the record including `sourceDetected` | 201 |
 | GET | `/api/speech/voices?language=zu` | Bearer | `{language, available, provider, voices: [{id, name, locale, gender}]}`, best default first. `available=false` means "use the browser's voices" | 200 |

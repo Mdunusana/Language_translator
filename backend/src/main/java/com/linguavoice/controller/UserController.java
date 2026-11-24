@@ -1,6 +1,7 @@
 package com.linguavoice.controller;
 
 import com.linguavoice.dto.user.ChangePasswordRequest;
+import com.linguavoice.dto.user.UpdatePreferencesRequest;
 import com.linguavoice.dto.user.UpdateProfileRequest;
 import com.linguavoice.dto.user.UserResponse;
 import com.linguavoice.security.CurrentUser;
@@ -39,6 +40,12 @@ public class UserController {
     public UserResponse updateProfile(@AuthenticationPrincipal Jwt jwt,
                                       @Valid @RequestBody UpdateProfileRequest request) {
         return userService.updateProfile(CurrentUser.id(jwt), request);
+    }
+
+    @PutMapping("/preferences")
+    public UserResponse updatePreferences(@AuthenticationPrincipal Jwt jwt,
+                                          @Valid @RequestBody UpdatePreferencesRequest request) {
+        return userService.updatePreferences(CurrentUser.id(jwt), request);
     }
 
     @PutMapping("/password")

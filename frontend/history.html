@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>History — LinguaVoice</title>
+  <meta name="theme-color" content="#0b1736">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/history.css">
+  <script type="module" src="js/pages/history.js"></script>
+</head>
+<body class="app-body">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header data-app-shell></header>
+
+  <main class="app-main" id="main">
+    <div class="container">
+      <div class="page-header history-header">
+        <div>
+          <h1>Translation history</h1>
+          <p>Everything you've translated, newest first. Only text is saved, never recordings.</p>
+        </div>
+        <button class="btn btn-secondary btn-danger-outline" type="button" data-clear-all disabled>Clear history</button>
+      </div>
+
+      <!-- Filters: one row above the results they scope. -->
+      <form class="filters" role="search" data-filters>
+        <div class="field filter-search">
+          <label class="visually-hidden" for="search">Search translations</label>
+          <input class="input" id="search" name="search" type="search" placeholder="Search your translations…" maxlength="200" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="visually-hidden" for="language">Language</label>
+          <select class="input select-compact" id="language" name="language">
+            <option value="">All languages</option>
+          </select>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Type">
+          <label><input type="radio" name="type" value="" checked><span>All</span></label>
+          <label><input type="radio" name="type" value="TEXT"><span>Text</span></label>
+          <label><input type="radio" name="type" value="VOICE"><span>Voice</span></label>
+        </div>
+      </form>
+
+      <div class="alert" data-form-alert hidden></div>
+      <p class="result-count" data-result-count role="status" aria-live="polite"></p>
+
+      <ul class="history-list" data-history-list aria-busy="true"></ul>
+
+      <div class="empty-state" data-empty hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 3"/></svg>
+        <h2 data-empty-title>No translations yet</h2>
+        <p data-empty-text>Your translations will appear here.</p>
+        <a class="btn btn-primary" href="translator.html" data-empty-action>Start translating</a>
+      </div>
+
+      <div class="load-more">
+        <button class="btn btn-secondary" type="button" data-load-more hidden><span data-label>Load more</span></button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="confirm-dialog" data-confirm-dialog aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title">Clear your whole history?</h2>
+      <p>This permanently deletes <strong data-confirm-count>all</strong> of your saved translations. It can't be undone.</p>
+      <div class="form-actions">
+        <button class="btn btn-secondary" value="cancel" type="submit" autofocus>Cancel</button>
+        <button class="btn btn-danger" value="confirm" type="submit">Delete everything</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

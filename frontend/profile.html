@@ -36,7 +36,45 @@
             <div><dt>Default languages</dt><dd class="skeleton" data-field="languages">—</dd></div>
             <div><dt>Speech speed</dt><dd class="skeleton" data-field="speechSpeed">—</dd></div>
           </dl>
-          <p class="note">Editing your default languages and speech speed is coming soon. For now, the translator remembers your last choice on this device.</p>
+        </section>
+
+        <section class="card card-wide" aria-labelledby="preferences-title">
+          <div class="card-header">
+            <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></span>
+            <div><h2 id="preferences-title">Translator preferences</h2><p>What the translator starts with on every device.</p></div>
+          </div>
+          <form class="form" id="preferences-form" novalidate>
+            <div class="alert" data-form-alert hidden></div>
+            <div class="form-row prefs-row">
+              <div class="field">
+                <label for="preferredSourceLanguage">Default "From" language</label>
+                <select class="input" id="preferredSourceLanguage" name="preferredSourceLanguage" aria-describedby="preferredSourceLanguage-error" disabled>
+                  <option value="auto">Detect language</option>
+                </select>
+                <p class="field-error" id="preferredSourceLanguage-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="preferredTargetLanguage">Default "To" language</label>
+                <select class="input" id="preferredTargetLanguage" name="preferredTargetLanguage" aria-describedby="preferredTargetLanguage-error" disabled></select>
+                <p class="field-error" id="preferredTargetLanguage-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="speechSpeed">Speaking speed</label>
+                <select class="input" id="speechSpeed" name="speechSpeed" aria-describedby="speechSpeed-error" disabled>
+                  <option value="0.50">0.5× (slow)</option>
+                  <option value="0.75">0.75×</option>
+                  <option value="1.00">1× (normal)</option>
+                  <option value="1.25">1.25×</option>
+                  <option value="1.50">1.5×</option>
+                  <option value="2.00">2× (fast)</option>
+                </select>
+                <p class="field-error" id="speechSpeed-error" hidden></p>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit" disabled><span data-label>Save preferences</span></button>
+            </div>
+          </form>
         </section>
 
         <section class="card" aria-labelledby="details-title">

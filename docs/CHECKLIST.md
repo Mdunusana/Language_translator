@@ -119,8 +119,44 @@ Legend: ✅ done and verified · 🟡 done, not yet verified · ⬜ pending
 - ⬜ **Live synthesis with a real provider**: needs `TTS_PROVIDER` and a key; then listen to one translation
 - ⬜ Automated frontend tests for the player (Phase 7)
 
-## Phase 6 — Dashboard and history ⬜
-Statistics and recent-activity endpoints · charts · history search, filter and delete · preferences editing
+## Phase 6 — Dashboard, history and preferences ✅
+- ✅ History API:
+  - newest-first paging (max 50 per page);
+  - case-insensitive search of the original and translated text, with `%` and `_` matched literally;
+  - filters by language (source or target) and type;
+  - built with the type-safe Criteria API, so no SQL is built from strings.
+- ✅ Authorisation: a user can't read or delete another user's record. They get **404**, not 403, so ids can't be probed. Clear-all only touches the caller's rows. Covered by tests.
+- ✅ Dashboard API:
+  - totals, voice/text split, rolling 7 days;
+  - top 5 languages with share (the undetermined `und` is excluded);
+  - zero-filled daily activity bucketed in the **caller's time zone**;
+  - recent activity.
+- ✅ Preferences API: default source (`auto` allowed) and target languages plus speaking speed, validated against the catalog
+- ✅ History page:
+  - debounced search with highlighted matches, language filter, All/Text/Voice toggle, "Load more";
+  - per-item copy and delete;
+  - "Clear history" behind a confirmation dialog;
+  - distinct empty states for "no history" and "no matches";
+  - linkable filters (`history.html?language=zu`).
+- ✅ Dashboard page:
+  - KPI tiles;
+  - a 14-day column chart (single series in the validated accent colour, 24px bars with 4px rounded tops, hairline grid, hover **and** keyboard tooltips, a table view);
+  - ranked language bars;
+  - recent activity;
+  - redraws on resize.
+- ✅ Profile page: a preferences form. Saving clears this device's remembered languages and speed, so the account defaults apply.
+- ✅ Navigation: Translator · Dashboard · History · Profile
+- ✅ Backend tests: **132/132 passing**
+- ✅ Verified in the browser against real MySQL. Checked:
+  - dashboard numbers matching the API;
+  - hover tooltip;
+  - history search, filters, empty states, delete, and clear (both cancel and confirm, with real clicks);
+  - preferences flowing through to the translator;
+  - phone layouts.
+- ✅ Bugs found and fixed:
+  1. **Timestamps were stored 2 hours early.** `hibernate.jdbc.time_zone=UTC` converted `LocalDateTime` through the JVM's zone. It was invisible to the app, but every value in MySQL was wrong. The setting was removed, and a regression test is proven to fail with it and pass without it. Rows written before this fix (test accounts only) are 2 hours early.
+  2. The language bars had different track lengths, so they couldn't be compared. The figure column now has a fixed width.
+  3. On phones, the stat tiles filled the first screen. They're now a 2×2 grid.
 
 ## Phase 7 — QA ⬜
 Frontend tests · security tests (cross-user access, rate limiting) · bug fixing

@@ -132,6 +132,49 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.fieldErrors.newPassword").exists());
     }
 
+    @Test
+    @DisplayName("PUT /api/users/preferences saves languages and speed and returns them")
+    void updatesPreferences() throws Exception {
+        updatePreferences(adaToken, "auto", "zu", "1.25")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.preferences.preferredSourceLanguage").value("auto"))
+                .andExpect(jsonPath("$.preferences.preferredTargetLanguage").value("zu"))
+                .andExpect(jsonPath("$.preferences.speechSpeed").value(1.25));
+
+        mockMvc.perform(get("/api/users/profile").header(HttpHeaders.AUTHORIZATION, bearer(adaToken)))
+                .andExpect(jsonPath("$.preferences.preferredTargetLanguage").value("zu"));
+        mockMvc.perform(get("/api/users/profile").header(HttpHeaders.AUTHORIZATION, bearer(graceToken)))
+                .andExpect(jsonPath("$.preferences.preferredTargetLanguage").value("af"));
+    }
+
+    @Test
+    @DisplayName("PUT /api/users/preferences validates languages and speed")
+    void validatesPreferences() throws Exception {
+        updatePreferences(adaToken, "en", "klingon", "1.0")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.preferredTargetLanguage").exists());
+        updatePreferences(adaToken, "ko", "en", "1.0")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.preferredSourceLanguage").value("Unknown language."));
+        updatePreferences(adaToken, "en", "en", "1.0")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.preferredTargetLanguage").exists());
+        updatePreferences(adaToken, "en", "af", "2.5")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.speechSpeed").exists());
+        updatePreferences(adaToken, "en", "af", "1.234")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.speechSpeed").exists());
+    }
+
+    private ResultActions updatePreferences(String token, String source, String target, String speed) throws Exception {
+        return mockMvc.perform(put("/api/users/preferences")
+                .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"preferredSourceLanguage\":\"" + source + "\",\"preferredTargetLanguage\":\"" + target
+                        + "\",\"speechSpeed\":" + speed + "}"));
+    }
+
     private ResultActions updateProfile(String token, String fullName, String email) throws Exception {
         return mockMvc.perform(put("/api/users/profile")
                 .header(HttpHeaders.AUTHORIZATION, bearer(token))

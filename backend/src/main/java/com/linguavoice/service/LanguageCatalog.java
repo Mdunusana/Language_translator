@@ -31,4 +31,8 @@ public final class LanguageCatalog {
 
     private LanguageCatalog() {
     }
+
+    public static boolean contains(String code) {
+        return LANGUAGES.stream().anyMatch(language -> language.code().equals(code));
+    }
 }

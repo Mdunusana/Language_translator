@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/** Translation endpoints. History (Phase 6) is added here later. */
+/** Creating translations. Reading and deleting history lives in {@link HistoryController}. */
 @RestController
 @RequestMapping("/api/translations")
 public class TranslationController {

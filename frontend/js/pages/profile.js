@@ -4,16 +4,29 @@ import { renderAppShell, updateShellUser } from '../components/app-shell.js';
 import {
   clearFieldErrors, hideAlert, initPasswordToggles, showAlert, showServerFieldErrors, validateForm, validateOnBlur, withBusyButton,
 } from '../components/forms.js';
+import { fillLanguageOptions, languageName } from '../components/languages.js';
 import {
   validateEmail, validateFullName, validateMatch, validateNewPassword, validateRequired,
 } from '../components/validators.js';
 
-/** Display names for the language codes stored in preferences. The full list arrives with Phase 3. */
-const LANGUAGE_NAMES = new Intl.DisplayNames(['en'], { type: 'language' });
+/** Device-level translator memory (see translator.js). Cleared when account preferences are saved. */
+const DEVICE_OVERRIDE_KEYS = ['linguavoice.lastLanguages', 'linguavoice.speechSpeed'];
+
+const forms = {
+  profile: document.getElementById('profile-form'),
+  preferences: document.getElementById('preferences-form'),
+  password: document.getElementById('password-form'),
+};
 
 const profileRules = {
   fullName: (value) => validateFullName(value),
   email: (value) => validateEmail(value),
+};
+
+const preferenceRules = {
+  preferredTargetLanguage: (value, form) => (value === form.elements.preferredSourceLanguage.value
+    ? 'Choose a target language that is different from the source language.'
+    : ''),
 };
 
 const passwordRules = {
@@ -22,41 +35,56 @@ const passwordRules = {
   confirmNewPassword: (value, form) => validateMatch(value, form.elements.newPassword.value),
 };
 
-function languageName(code) {
-  try { return LANGUAGE_NAMES.of(code) ?? code; } catch { return code; }
-}
-
 function setField(name, text) {
   const el = document.querySelector(`[data-field="${name}"]`);
   el.textContent = text;
   el.classList.remove('skeleton');
 }
 
-function renderProfile(profileForm, user) {
-  profileForm.elements.fullName.value = user.fullName;
-  profileForm.elements.email.value = user.email;
+function formatSpeed(speed) {
+  return `${Number(speed).toFixed(2).replace(/\.?0+$/, '')}×`;
+}
 
+/** Shows the user in the overview card and fills both editable forms. */
+function render(user) {
+  forms.profile.elements.fullName.value = user.fullName;
+  forms.profile.elements.email.value = user.email;
   setField('memberSince', new Date(user.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' }));
+
   const prefs = user.preferences;
   setField('languages', prefs
     ? `${languageName(prefs.preferredSourceLanguage)} → ${languageName(prefs.preferredTargetLanguage)}`
     : 'Not set');
-  setField('speechSpeed', prefs ? `${Number(prefs.speechSpeed).toFixed(2)}×` : 'Not set');
+  setField('speechSpeed', prefs ? formatSpeed(prefs.speechSpeed) : 'Not set');
+  if (prefs) {
+    forms.preferences.elements.preferredSourceLanguage.value = prefs.preferredSourceLanguage;
+    forms.preferences.elements.preferredTargetLanguage.value = prefs.preferredTargetLanguage;
+    const speed = Number(prefs.speechSpeed).toFixed(2);
+    const speedSelect = forms.preferences.elements.speechSpeed;
+    if (![...speedSelect.options].some((option) => option.value === speed)) {
+      speedSelect.append(Object.assign(document.createElement('option'), { value: speed, textContent: formatSpeed(speed) }));
+    }
+    speedSelect.value = speed;
+  }
 }
 
 function setFormEnabled(form, enabled) {
-  form.querySelectorAll('input, button').forEach((el) => { el.disabled = !enabled; });
+  form.querySelectorAll('input, select, button').forEach((el) => { el.disabled = !enabled; });
 }
 
-async function loadProfile(profileForm) {
+function applyUser(user) {
+  session.setUser(user);
+  updateShellUser(user);
+  render(user);
+}
+
+async function loadProfile() {
   try {
-    const user = await api.getProfile();
-    session.setUser(user);
-    updateShellUser(user);
-    renderProfile(profileForm, user);
-    setFormEnabled(profileForm, true);
+    applyUser(await api.getProfile());
+    setFormEnabled(forms.profile, true);
+    setFormEnabled(forms.preferences, true);
   } catch (error) {
-    if (error.status !== 401) showAlert(profileForm, `Could not load your profile. ${error.message}`);
+    if (error.status !== 401) showAlert(forms.profile, `Could not load your profile. ${error.message}`);
   }
 }
 
@@ -72,14 +100,39 @@ function initProfileForm(form) {
 
     await withBusyButton(submit, 'Saving…', async () => {
       try {
-        const user = await api.updateProfile({
+        applyUser(await api.updateProfile({
           fullName: form.elements.fullName.value.trim(),
           email: form.elements.email.value.trim(),
-        });
-        session.setUser(user);
-        updateShellUser(user);
-        renderProfile(form, user);
+        }));
         showAlert(form, 'Your details have been saved.', 'success');
+      } catch (error) {
+        if (!showServerFieldErrors(form, error.fieldErrors)) showAlert(form, error.message);
+      }
+    });
+  });
+}
+
+function initPreferencesForm(form) {
+  fillLanguageOptions(form.elements.preferredSourceLanguage);
+  fillLanguageOptions(form.elements.preferredTargetLanguage);
+  const submit = form.querySelector('[type="submit"]');
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    hideAlert(form);
+    clearFieldErrors(form);
+    if (!validateForm(form, preferenceRules)) return;
+
+    await withBusyButton(submit, 'Saving…', async () => {
+      try {
+        applyUser(await api.updatePreferences({
+          preferredSourceLanguage: form.elements.preferredSourceLanguage.value,
+          preferredTargetLanguage: form.elements.preferredTargetLanguage.value,
+          speechSpeed: Number(form.elements.speechSpeed.value),
+        }));
+        // The translator prefers what was last used on this device; saved preferences should win next time.
+        DEVICE_OVERRIDE_KEYS.forEach((key) => { try { localStorage.removeItem(key); } catch { /* not important */ } });
+        showAlert(form, 'Preferences saved. The translator will use them from now on.', 'success');
       } catch (error) {
         if (!showServerFieldErrors(form, error.fieldErrors)) showAlert(form, error.message);
       }
@@ -116,8 +169,8 @@ function initPasswordForm(form) {
 
 if (requireAuth()) {
   renderAppShell();
-  const profileForm = document.getElementById('profile-form');
-  initProfileForm(profileForm);
-  initPasswordForm(document.getElementById('password-form'));
-  loadProfile(profileForm);
+  initProfileForm(forms.profile);
+  initPreferencesForm(forms.preferences);
+  initPasswordForm(forms.password);
+  loadProfile();
 }

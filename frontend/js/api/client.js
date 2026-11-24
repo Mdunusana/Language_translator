@@ -129,6 +129,25 @@ export const api = {
   /** @param {FormData} form  audio (WAV), sourceLanguage, targetLanguage */
   translateVoice: (form) => apiRequest('/translations/voice', { method: 'POST', body: form, timeoutMs: 60000 }),
 
+  // HistoryController
+  /** @param {{search?: string, language?: string, type?: string, page?: number, size?: number}} filters */
+  history: (filters = {}) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+    }
+    return apiRequest(`/translations/history?${params}`);
+  },
+  deleteTranslation: (id) => apiRequest(`/translations/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  clearHistory: () => apiRequest('/translations/history', { method: 'DELETE' }),
+
+  // DashboardController
+  statistics: (timezone) => apiRequest(`/dashboard/statistics?timezone=${encodeURIComponent(timezone)}`),
+  recentActivity: (limit = 5) => apiRequest(`/dashboard/recent-activity?limit=${limit}`),
+
+  // UserController (preferences)
+  updatePreferences: (data) => apiRequest('/users/preferences', { method: 'PUT', body: data }),
+
   // SpeechController
   voices: (language) => apiRequest(`/speech/voices?language=${encodeURIComponent(language)}`),
   /** @returns {Promise<Blob>} MP3 audio */
