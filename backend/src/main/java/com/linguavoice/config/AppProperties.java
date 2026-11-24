@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -22,7 +23,9 @@ public record AppProperties(
         @NotBlank String name,
         @NotBlank String version,
         @Valid @NotNull Cors cors,
-        @Valid @NotNull Jwt jwt) {
+        @Valid @NotNull Jwt jwt,
+        @Valid @NotNull Ai ai,
+        @Valid @NotNull RateLimit rateLimit) {
 
     /** Origins (scheme + host + port) that the browser frontend is served from. */
     public record Cors(@NotEmpty List<String> allowedOrigins) {
@@ -39,5 +42,30 @@ public record AppProperties(
             String secret,
             @Min(5) @Max(1440) int expirationMinutes,
             @NotBlank String issuer) {
+    }
+
+    /** External AI services. Speech-to-text and text-to-speech are added in Phases 4 and 5. */
+    public record Ai(@Valid @NotNull Translation translation) {
+    }
+
+    /**
+     * @param provider       {@code azure}, {@code google}, or {@code none}/blank to disable translation
+     * @param apiKey         provider key; read from TRANSLATION_API_KEY and never sent to the browser
+     * @param region         Azure resource region (e.g. {@code southafricanorth}); unused by Google
+     * @param endpoint       optional base-URL override; blank uses the provider's public endpoint
+     * @param timeoutSeconds upper bound for one provider call
+     */
+    public record Translation(
+            @Pattern(regexp = "(?i)^(|none|azure|google)$",
+                    message = "TRANSLATION_PROVIDER must be azure, google or none")
+            String provider,
+            String apiKey,
+            String region,
+            String endpoint,
+            @Min(1) @Max(60) int timeoutSeconds) {
+    }
+
+    /** Per-user budget shared by all paid AI endpoints (translation now, speech in later phases). */
+    public record RateLimit(@Min(1) @Max(10_000) int aiRequestsPerMinute) {
     }
 }

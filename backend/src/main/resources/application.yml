@@ -61,6 +61,16 @@ app:
     issuer: linguavoice
   security:
     bcrypt-strength: 12
+  ai:
+    translation:
+      # azure | google | none. Without a provider and key, translation returns HTTP 503 (never fake output).
+      provider: ${TRANSLATION_PROVIDER:none}
+      api-key: ${TRANSLATION_API_KEY:}
+      region: ${TRANSLATION_REGION:}
+      endpoint: ${TRANSLATION_ENDPOINT:}
+      timeout-seconds: 10
+  rate-limit:
+    ai-requests-per-minute: ${AI_RATE_LIMIT_PER_MINUTE:30}
 
 logging:
   level:

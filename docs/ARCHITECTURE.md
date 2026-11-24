@@ -146,5 +146,6 @@ Before enabling a language for voice, we check the provider's current language l
 | Provider costs and quotas | Unexpected bills | Rate limiting, character and duration caps, free-tier keys during development |
 | Microphone requires a secure context | Recording fails over plain HTTP | `localhost` counts as secure for development. Deploy behind HTTPS |
 | JWT in browser storage | Token theft through XSS | CSP, no `innerHTML` with user data, short expiry |
+| In-memory rate limiter | With several backend instances, each would keep its own budget | Fine for one instance; switch to Redis-backed buckets if the app is scaled out |
 | Port clash on the dev machine | Backend fails to start | Port 8080 is already used by another Java app on this machine, so LinguaVoice defaults to **8081** (`SERVER_PORT`) |
 | No Docker installed on the dev machine | Phase 8 cannot be verified locally | Install Docker Desktop before Phase 8 |

@@ -5,8 +5,8 @@ import { onUnauthorized, tokenStore } from '../api/client.js';
 
 const USER_KEY = 'linguavoice.user';
 
-/** First page after signing in. Becomes translator.html once Phase 3 ships the translator. */
-export const HOME_PAGE = 'profile.html';
+/** First page after signing in. */
+export const HOME_PAGE = 'translator.html';
 const LOGIN_PAGE = 'login.html';
 
 /** Only bare page names are accepted as redirect targets, which prevents open redirects via ?next=. */

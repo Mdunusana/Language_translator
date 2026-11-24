@@ -14,3 +14,7 @@ app:
     expiration-minutes: 60
   security:
     bcrypt-strength: 4   # minimum cost: keeps tests fast; production uses 12
+  ai:
+    translation:
+      provider: none     # tests replace the provider with Mockito mocks; no paid API is ever called
+      api-key: ''

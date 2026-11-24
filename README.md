@@ -2,7 +2,7 @@
 
 LinguaVoice is a full-stack web application for talking across languages. You speak or type, the AI translates, and you can listen to the result.
 
-> **Status:** Phase 2 (database and authentication) is complete. See [docs/CHECKLIST.md](docs/CHECKLIST.md) for progress.
+> **Status:** Phase 3 (text translation) is complete. It needs a translation provider key to translate (see step 2). See [docs/CHECKLIST.md](docs/CHECKLIST.md) for progress.
 
 | Layer | Technology |
 |---|---|
@@ -31,7 +31,14 @@ In `.env`, set:
 - `DB_PASSWORD`: the password from step 1.
 - `JWT_SECRET`: at least 32 random characters, for example from `openssl rand -base64 64`. The backend refuses to start without it.
 
-The `.env` file is git-ignored.
+To enable translation, also set a provider. Without one, the translator page says translation isn't configured and the API returns 503; it never shows invented results.
+
+| Provider | `.env` settings | Where to get the key |
+|---|---|---|
+| Azure AI Translator | `TRANSLATION_PROVIDER=azure`, `TRANSLATION_API_KEY`, `TRANSLATION_REGION` | Azure portal → create a **Translator** resource (free F0 tier) → *Keys and Endpoint* → KEY 1 and *Location/Region* |
+| Google Cloud Translation | `TRANSLATION_PROVIDER=google`, `TRANSLATION_API_KEY` | Google Cloud console → enable **Cloud Translation API** → *Credentials* → create an API key (restrict it to that API) |
+
+Restart the backend after changing `.env`. The startup log shows which provider is active (`Text translation provider: …`), or a warning if translation is disabled. The `.env` file is git-ignored.
 
 ### 3. Start the backend (port 8081)
 ```bash
@@ -51,7 +58,7 @@ Options: `--port 5500` sets the frontend port, and `--api http://localhost:8081`
 ```bash
 cd backend && mvn test
 ```
-41 tests use an in-memory H2 database in MySQL mode and run the real Flyway migrations. They need no MySQL server and make no AI provider calls.
+74 tests use an in-memory H2 database in MySQL mode and run the real Flyway migrations. They need no MySQL server and make no AI provider calls: providers are replaced by Mockito mocks, and the Azure and Google adapters are tested against a mock HTTP server (`MockRestServiceServer`).
 
 | Suite | Covers |
 |---|---|
@@ -59,6 +66,10 @@ cd backend && mvn test
 | `UserControllerTest` | profile read/update, email conflicts, password change, users only ever seeing their own data |
 | `AuthServiceTest` | service logic with Mockito mocks, including the timing-attack defence and the registration race |
 | `ConcurrentUserUpdateTest` | regression: overlapping profile and password updates must not overwrite each other |
+| `TranslationControllerTest` | translate and save, auto-detect, server-side validation, unsupported languages, 429 rate limit, 503 when not configured, language list |
+| `TranslationServiceTest` | validation order, history saving, `und` when the language isn't detected, nothing saved when the provider fails |
+| `AzureTranslationProviderTest`, `GoogleTranslationProviderTest` | exact HTTP contract (URL, headers, body), code mapping (`zh` ↔ `zh-Hans`/`zh-CN`), caching, mapping of provider errors |
+| `RateLimiterTest`, `TranslationProviderConfigTest` | token bucket per user, provider selection from configuration |
 | `HealthControllerTest`, `SchemaMigrationTest` | health check, 401 handling, CORS, database constraints |
 
 ## Database
@@ -77,11 +88,18 @@ All responses are JSON. Errors share one shape: `{ timestamp, status, error, mes
 | GET | `/api/users/profile` | Bearer | The signed-in user's profile and preferences | 200 |
 | PUT | `/api/users/profile` | Bearer | `{fullName, email}` | 200 |
 | PUT | `/api/users/password` | Bearer | `{currentPassword, newPassword, confirmNewPassword}` | 204 |
+| GET | `/api/languages` | Bearer | `{translationAvailable, provider, languages: [{code, name, nativeName, textTranslation, voiceInput, voiceOutput}], message?}`. Lists only languages the configured provider supports | 200 |
+| POST | `/api/translations/text` | Bearer | `{text (≤ 5000 chars), sourceLanguage ("auto" or a code), targetLanguage}`. Translates, saves to history, and returns the record including `sourceDetected` | 201 |
 
 Error statuses:
 - **400** – validation failed (`fieldErrors` says which field and why).
 - **401** – missing, invalid or expired token, or wrong credentials.
 - **409** – the email address is already in use.
+- **429** – too many AI requests; wait for the number of seconds in the `Retry-After` header.
+- **502** – the AI provider failed or timed out.
+- **503** – no AI provider is configured, or its credentials were rejected.
+
+Supported languages: English, Afrikaans, isiZulu, isiXhosa, Spanish, French, Portuguese, German, Mandarin Chinese, Arabic, Japanese, Swahili. A language is offered only when the configured provider confirms it supports it.
 
 Passwords must be 8–72 characters and contain a letter and a number.
 

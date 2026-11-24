@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Translator — LinguaVoice</title>
+  <meta name="theme-color" content="#0b1736">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/forms.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/translator.css">
+  <script type="module" src="js/pages/translator.js"></script>
+</head>
+<body class="app-body">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header data-app-shell></header>
+
+  <main class="app-main" id="main">
+    <div class="container">
+      <div class="page-header translator-header">
+        <div>
+          <h1>Translator</h1>
+          <p>Type or paste text, choose your languages and translate.</p>
+        </div>
+        <p class="provider-credit" data-provider hidden></p>
+      </div>
+
+      <div class="alert" data-type="info" data-unavailable hidden></div>
+
+      <section class="translator card" aria-label="Translator" data-translator>
+        <div class="lang-bar">
+          <div class="lang-select">
+            <label for="sourceLanguage">From</label>
+            <select class="input select" id="sourceLanguage" name="sourceLanguage" disabled>
+              <option value="auto">Detect language</option>
+            </select>
+          </div>
+          <button class="icon-btn swap-btn" type="button" data-swap aria-label="Swap languages" title="Swap languages" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg>
+          </button>
+          <div class="lang-select">
+            <label for="targetLanguage">To</label>
+            <select class="input select" id="targetLanguage" name="targetLanguage" disabled></select>
+          </div>
+        </div>
+
+        <div class="panels">
+          <div class="panel">
+            <label class="visually-hidden" for="sourceText">Text to translate</label>
+            <textarea class="panel-text" id="sourceText" maxlength="5000" placeholder="Enter text to translate…"
+                      aria-describedby="char-count shortcut-hint" disabled></textarea>
+            <div class="panel-footer">
+              <span class="char-count" id="char-count" aria-live="polite"><span data-count>0</span> / 5000</span>
+              <button class="icon-btn" type="button" data-clear aria-label="Clear text" title="Clear" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel panel-output" data-state="empty">
+            <span class="detected-chip" data-detected hidden></span>
+            <!-- No whitespace inside: the output box uses white-space: pre-wrap to keep line breaks in translations. -->
+            <div class="panel-text output-text" data-output role="region" aria-live="polite" aria-label="Translation"><span class="placeholder">Translation will appear here</span></div>
+            <div class="panel-footer">
+              <span class="output-status" data-output-status></span>
+              <div class="panel-actions">
+                <button class="icon-btn" type="button" data-listen aria-label="Listen to translation" title="Listen" disabled>
+                  <svg class="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+                  <svg class="icon-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                </button>
+                <button class="icon-btn" type="button" data-copy aria-label="Copy translation" title="Copy" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert" data-form-alert hidden></div>
+
+        <div class="translator-actions">
+          <p class="shortcut-hint" id="shortcut-hint">Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to translate</p>
+          <button class="btn btn-primary btn-lg" type="button" data-translate disabled><span data-label>Translate</span></button>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

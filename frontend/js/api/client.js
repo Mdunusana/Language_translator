@@ -116,4 +116,8 @@ export const api = {
   getProfile: () => apiRequest('/users/profile'),
   updateProfile: (data) => apiRequest('/users/profile', { method: 'PUT', body: data }),
   changePassword: (data) => apiRequest('/users/password', { method: 'PUT', body: data }),
+
+  // LanguageController / TranslationController
+  languages: () => apiRequest('/languages'),
+  translateText: (data) => apiRequest('/translations/text', { method: 'POST', body: data, timeoutMs: 25000 }),
 };
