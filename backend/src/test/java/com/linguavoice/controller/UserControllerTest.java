@@ -103,7 +103,15 @@ class UserControllerTest {
     @Test
     @DisplayName("PUT /api/users/password changes the password: new one works, old one no longer does")
     void changesPassword() throws Exception {
-        changePassword(adaToken, PASSWORD, "NewSecret456", "NewSecret456").andExpect(status().isNoContent());
+        Thread.sleep(1100); // token "iat" has 1-second precision; a stolen token is realistically older than this
+        String fresh = objectMapper.readTree(changePassword(adaToken, PASSWORD, "NewSecret456", "NewSecret456")
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).get("accessToken").asText();
+
+        // The old token is revoked; the fresh one keeps this session going.
+        mockMvc.perform(get("/api/users/profile").header(HttpHeaders.AUTHORIZATION, bearer(adaToken)))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/users/profile").header(HttpHeaders.AUTHORIZATION, bearer(fresh)))
+                .andExpect(status().isOk());
 
         login("ada@example.com", "NewSecret456").andExpect(status().isOk());
         login("ada@example.com", PASSWORD).andExpect(status().isUnauthorized());

@@ -135,6 +135,9 @@ Before enabling a language for voice, we check the provider's current language l
 - SQL injection is prevented by using only JPA and parameterised queries. No SQL is built by string concatenation.
 - Uploads are capped at 10 MB and about 60 s of audio. Only whitelisted MIME types are accepted, with a magic-byte check.
 - Rate limiting: a per-user token bucket on `/translations/*` and `/speech/*` returns 429 with `Retry-After`.
+- Brute-force protection: 5 failed sign-ins for one email within 15 minutes locks that email for 15 minutes (429). Unknown emails are treated the same, so the lockout doesn't reveal which accounts exist.
+- Token revocation: tokens issued before the user's last password change, or for a deleted account, are rejected (`TokenRevocationValidator`, one primary-key lookup per request).
+- Response headers: CSP `default-src 'none'; frame-ancestors 'none'`, `Referrer-Policy: no-referrer`, `nosniff`, `X-Frame-Options: DENY`, `Cache-Control: no-store`.
 - Secrets come only from environment variables or `.env`, and `.gitignore` blocks committing them.
 
 ## 7. Technical risks

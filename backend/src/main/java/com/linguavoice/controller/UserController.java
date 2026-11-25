@@ -48,10 +48,10 @@ public class UserController {
         return userService.updatePreferences(CurrentUser.id(jwt), request);
     }
 
+    /** Signs out all other sessions (older tokens stop working) and returns a fresh token for this one. */
     @PutMapping("/password")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void changePassword(@AuthenticationPrincipal Jwt jwt,
-                               @Valid @RequestBody ChangePasswordRequest request) {
-        userService.changePassword(CurrentUser.id(jwt), request);
+    public com.linguavoice.dto.auth.AuthResponse changePassword(@AuthenticationPrincipal Jwt jwt,
+                                                                @Valid @RequestBody ChangePasswordRequest request) {
+        return userService.changePassword(CurrentUser.id(jwt), request);
     }
 }

@@ -15,7 +15,7 @@ function svgEl(name, attributes = {}) {
 }
 
 /** Clean axis maximum and step: 0 / 1 / 2 / 5 / 10 / 20 / 50 … so ticks read naturally. */
-function niceScale(max, targetTicks = 4) {
+export function niceScale(max, targetTicks = 4) {
   if (max <= 0) return { max: 4, step: 1 };
   const rough = max / targetTicks;
   const magnitude = 10 ** Math.floor(Math.log10(rough));

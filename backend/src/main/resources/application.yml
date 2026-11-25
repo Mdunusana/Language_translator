@@ -60,6 +60,9 @@ app:
     issuer: linguavoice
   security:
     bcrypt-strength: 12
+    # Brute-force protection: this many wrong passwords for one email locks it for the lockout period.
+    login-max-failures: 5
+    login-lockout-minutes: 15
   ai:
     translation:
       # azure | google | none. Without a provider and key, translation returns HTTP 503 (never fake output).

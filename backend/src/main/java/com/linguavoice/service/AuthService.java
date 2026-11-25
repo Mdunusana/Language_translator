@@ -10,6 +10,7 @@ import com.linguavoice.exception.ApiException;
 import com.linguavoice.repository.UserPreferenceRepository;
 import com.linguavoice.repository.UserRepository;
 import com.linguavoice.security.JwtTokenService;
+import com.linguavoice.security.LoginAttemptLimiter;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,12 +35,16 @@ public class AuthService {
      */
     private final String timingEqualizerHash;
 
+    private final LoginAttemptLimiter loginAttemptLimiter;
+
     public AuthService(UserRepository userRepository, UserPreferenceRepository preferenceRepository,
-                       PasswordEncoder passwordEncoder, JwtTokenService tokenService) {
+                       PasswordEncoder passwordEncoder, JwtTokenService tokenService,
+                       LoginAttemptLimiter loginAttemptLimiter) {
         this.userRepository = userRepository;
         this.preferenceRepository = preferenceRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
+        this.loginAttemptLimiter = loginAttemptLimiter;
         this.timingEqualizerHash = passwordEncoder.encode("linguavoice-timing-equalizer");
     }
 
@@ -66,12 +71,17 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        Optional<User> user = userRepository.findByEmail(Emails.normalize(request.email()));
+        String email = Emails.normalize(request.email());
+        loginAttemptLimiter.checkAllowed(email); // checked before the password, so a locked account can't be probed
+
+        Optional<User> user = userRepository.findByEmail(email);
         String hash = user.map(User::getPasswordHash).orElse(timingEqualizerHash);
         boolean passwordMatches = passwordEncoder.matches(request.password(), hash);
         if (user.isEmpty() || !passwordMatches) {
+            loginAttemptLimiter.recordFailure(email);
             throw ApiException.unauthorized(INVALID_CREDENTIALS);
         }
+        loginAttemptLimiter.recordSuccess(email);
         UserPreference preference = preferenceRepository.findByUserId(user.get().getId()).orElse(null);
         return issueToken(user.get(), preference);
     }

@@ -18,6 +18,7 @@ import com.linguavoice.exception.ApiException;
 import com.linguavoice.repository.UserPreferenceRepository;
 import com.linguavoice.repository.UserRepository;
 import com.linguavoice.security.JwtTokenService;
+import com.linguavoice.security.LoginAttemptLimiter;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -41,13 +42,15 @@ class AuthServiceTest {
     @Mock private UserPreferenceRepository preferenceRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtTokenService tokenService;
+    @Mock private LoginAttemptLimiter loginAttemptLimiter;
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
         when(passwordEncoder.encode("linguavoice-timing-equalizer")).thenReturn("$2a$dummy");
-        authService = new AuthService(userRepository, preferenceRepository, passwordEncoder, tokenService);
+        authService = new AuthService(userRepository, preferenceRepository, passwordEncoder, tokenService,
+                loginAttemptLimiter);
     }
 
     @Test

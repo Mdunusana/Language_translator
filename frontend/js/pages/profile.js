@@ -153,11 +153,12 @@ function initPasswordForm(form) {
 
     await withBusyButton(submit, 'Updating…', async () => {
       try {
-        await api.changePassword({
+        const auth = await api.changePassword({
           currentPassword: form.elements.currentPassword.value,
           newPassword: form.elements.newPassword.value,
           confirmNewPassword: form.elements.confirmNewPassword.value,
         });
+        session.start(auth); // other sessions are now signed out; keep this one with the fresh token
         form.reset();
         showAlert(form, 'Your password has been updated.', 'success');
       } catch (error) {

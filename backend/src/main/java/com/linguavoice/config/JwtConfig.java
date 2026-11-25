@@ -1,6 +1,9 @@
 package com.linguavoice.config;
 
+import com.linguavoice.repository.UserRepository;
+import com.linguavoice.security.TokenRevocationValidator;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import javax.crypto.SecretKey;
@@ -33,13 +36,18 @@ public class JwtConfig {
         return new NimbusJwtEncoder(new ImmutableSecret<>(jwtSigningKey));
     }
 
-    /** Rejects tokens with a bad signature, a different algorithm, a wrong issuer, or an expiry in the past. */
+    /**
+     * Rejects tokens with a bad signature, a different algorithm, a wrong issuer, an expiry in the past,
+     * a deleted account, or an issue time before the user's last password change.
+     */
     @Bean
-    JwtDecoder jwtDecoder(SecretKey jwtSigningKey, AppProperties properties) {
+    JwtDecoder jwtDecoder(SecretKey jwtSigningKey, AppProperties properties, UserRepository userRepository) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSigningKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.jwt().issuer()));
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(properties.jwt().issuer()),
+                new TokenRevocationValidator(userRepository)));
         return decoder;
     }
 

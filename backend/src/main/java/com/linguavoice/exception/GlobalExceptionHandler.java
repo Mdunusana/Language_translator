@@ -11,7 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -50,12 +52,32 @@ public class GlobalExceptionHandler {
                 "The recording is too large. Recordings can be at most 60 seconds long.", request.getRequestURI()));
     }
 
-    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class,
-            MultipartException.class})
+    @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
     public ResponseEntity<ApiError> handleMissingPart(Exception ex, HttpServletRequest request) {
         return build(ApiError.of(HttpStatus.BAD_REQUEST,
                 "The upload is incomplete: it needs an audio recording, a source language and a target language.",
                 request.getRequestURI()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParameter(MissingServletRequestParameterException ex,
+                                                           HttpServletRequest request) {
+        return build(ApiError.of(HttpStatus.BAD_REQUEST,
+                "Missing required parameter: " + ex.getParameterName() + ".", request.getRequestURI()));
+    }
+
+    /** e.g. {@code ?page=abc} or an id too large for a number: a client error, not a server failure. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
+                                                       HttpServletRequest request) {
+        return build(ApiError.withFieldErrors(HttpStatus.BAD_REQUEST, "One or more parameters are invalid.",
+                request.getRequestURI(), Map.of(ex.getName(), "Invalid value.")));
+    }
+
+    /** The client accepts no format we can produce (e.g. Accept: image/png); there is no body we could send. */
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<Void> handleNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)

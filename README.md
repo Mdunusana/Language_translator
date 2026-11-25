@@ -2,7 +2,7 @@
 
 LinguaVoice is a full-stack web application for talking across languages. You speak or type, the AI translates, and you can listen to the result.
 
-> **Status:** Phase 6 (dashboard, history and preferences) is complete. Real translation, speech recognition and server voices need provider keys (see step 2). See [docs/CHECKLIST.md](docs/CHECKLIST.md) for progress.
+> **Status:** Phase 7 (testing and quality assurance) is complete. Real translation, speech recognition and server voices need provider keys (see step 2). See [docs/CHECKLIST.md](docs/CHECKLIST.md) for progress.
 
 | Layer | Technology |
 |---|---|
@@ -66,10 +66,17 @@ Open http://localhost:5500. The dev server serves the pages and forwards (proxie
 Options: `--port 5500` sets the frontend port, and `--api http://localhost:8081` sets the backend address.
 
 ## Tests
+Full details: [docs/TESTING.md](docs/TESTING.md).
+
 ```bash
 cd backend && mvn test
 ```
-132 tests use an in-memory H2 database in MySQL mode and run the real Flyway migrations. They need no MySQL server and make no AI provider calls: providers are replaced by Mockito mocks, and the Azure and Google adapters are tested against a mock HTTP server (`MockRestServiceServer`).
+```bash
+cd frontend && npm test
+```
+The frontend has 50 unit tests that run on Node's built-in test runner; there is nothing to install.
+
+The 166 backend tests use an in-memory H2 database in MySQL mode and run the real Flyway migrations. They need no MySQL server and make no AI provider calls: providers are replaced by Mockito mocks, and the Azure and Google adapters are tested against a mock HTTP server (`MockRestServiceServer`).
 
 | Suite | Covers |
 |---|---|
@@ -106,7 +113,7 @@ All responses are JSON. Errors share one shape: `{ timestamp, status, error, mes
 | POST | `/api/auth/login` | public | `{email, password}`. Returns `{accessToken, tokenType, expiresAt, user}` | 200 |
 | GET | `/api/users/profile` | Bearer | The signed-in user's profile and preferences | 200 |
 | PUT | `/api/users/profile` | Bearer | `{fullName, email}` | 200 |
-| PUT | `/api/users/password` | Bearer | `{currentPassword, newPassword, confirmNewPassword}` | 204 |
+| PUT | `/api/users/password` | Bearer | `{currentPassword, newPassword, confirmNewPassword}`. Signs out every other session (older tokens stop working) and returns a fresh `{accessToken, …}` for this one | 200 |
 | PUT | `/api/users/preferences` | Bearer | `{preferredSourceLanguage ("auto" or a code), preferredTargetLanguage, speechSpeed (0.50–2.00)}` | 200 |
 | GET | `/api/translations/history` | Bearer | Query: `search`, `language` (source or target), `type` (`TEXT`/`VOICE`), `page` (0-based), `size` (≤ 50). Returns `{items, page, size, totalItems, totalPages}`, newest first | 200 |
 | GET | `/api/translations/{id}` | Bearer | One of the caller's translations (another user's → 404) | 200 |
@@ -122,7 +129,8 @@ All responses are JSON. Errors share one shape: `{ timestamp, status, error, mes
 
 Error statuses:
 - **400** – validation failed (`fieldErrors` says which field and why).
-- **401** – missing, invalid or expired token, or wrong credentials.
+- **401** – missing, invalid, expired or revoked token, or wrong credentials.
+- **429** on login – too many failed attempts for that email (5 in 15 minutes); wait for `Retry-After`.
 - **409** – the email address is already in use.
 - **413** – the upload is larger than 10 MB.
 - **422** – no speech could be recognised in the recording.

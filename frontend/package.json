@@ -1,0 +1,13 @@
+{
+  "name": "linguavoice-frontend",
+  "private": true,
+  "description": "LinguaVoice frontend: plain HTML, CSS and JavaScript modules. No build step and no runtime dependencies.",
+  "type": "module",
+  "scripts": {
+    "start": "node dev-server.mjs",
+    "test": "node --test \"tests/*.test.mjs\""
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

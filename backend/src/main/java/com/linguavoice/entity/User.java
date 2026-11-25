@@ -45,6 +45,10 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    /** When the password was last changed (UTC); tokens issued earlier are rejected. Null = never changed. */
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     protected User() {
         // for JPA
     }
@@ -93,6 +97,16 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    /** Sets a new password hash and records the time, which invalidates all previously issued tokens. */
+    public void changePassword(String newPasswordHash, LocalDateTime changedAtUtc) {
+        this.passwordHash = newPasswordHash;
+        this.passwordChangedAt = changedAtUtc;
+    }
+
+    public LocalDateTime getPasswordChangedAt() {
+        return passwordChangedAt;
     }
 
     public LocalDateTime getCreatedAt() {

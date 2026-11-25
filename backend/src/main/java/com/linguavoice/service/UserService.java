@@ -6,10 +6,15 @@ import com.linguavoice.dto.user.UpdateProfileRequest;
 import com.linguavoice.dto.user.UserResponse;
 import com.linguavoice.entity.User;
 import com.linguavoice.entity.UserPreference;
-import java.math.RoundingMode;
+import com.linguavoice.dto.auth.AuthResponse;
 import com.linguavoice.exception.ApiException;
 import com.linguavoice.repository.UserPreferenceRepository;
 import com.linguavoice.repository.UserRepository;
+import com.linguavoice.security.JwtTokenService;
+import java.math.RoundingMode;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,12 +29,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserPreferenceRepository preferenceRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenService tokenService;
+    private final Clock clock;
 
     public UserService(UserRepository userRepository, UserPreferenceRepository preferenceRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder, JwtTokenService tokenService, Clock clock) {
         this.userRepository = userRepository;
         this.preferenceRepository = preferenceRepository;
         this.passwordEncoder = passwordEncoder;
+        this.tokenService = tokenService;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -55,7 +64,11 @@ public class UserService {
     }
 
     @Transactional
-    public void changePassword(long userId, ChangePasswordRequest request) {
+    /**
+     * Changes the password and signs out every other session: tokens issued before now stop working.
+     * Returns a fresh token so the caller's own session continues.
+     */
+    public AuthResponse changePassword(long userId, ChangePasswordRequest request) {
         User user = loadUser(userId);
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             throw ApiException.invalidField("currentPassword", "Current password is incorrect.");
@@ -66,7 +79,10 @@ public class UserService {
         if (request.newPassword().equals(request.currentPassword())) {
             throw ApiException.invalidField("newPassword", "New password must be different from the current one.");
         }
-        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.changePassword(passwordEncoder.encode(request.newPassword()), LocalDateTime.now(clock.withZone(ZoneOffset.UTC)));
+        userRepository.saveAndFlush(user);
+        JwtTokenService.IssuedToken token = tokenService.issue(user);
+        return AuthResponse.bearer(token.value(), token.expiresAt(), toResponse(user));
     }
 
     /** Default languages and speaking speed used by the translator. */

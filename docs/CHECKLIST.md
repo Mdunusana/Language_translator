@@ -158,8 +158,26 @@ Legend: ✅ done and verified · 🟡 done, not yet verified · ⬜ pending
   2. The language bars had different track lengths, so they couldn't be compared. The figure column now has a fixed width.
   3. On phones, the stat tiles filled the first screen. They're now a 2×2 grid.
 
-## Phase 7 — QA ⬜
-Frontend tests · security tests (cross-user access, rate limiting) · bug fixing
+## Phase 7 — Testing and quality assurance ✅
+- ✅ **Robustness sweep** (`ApiRobustnessTest`): 19 kinds of malformed request.
+  - It found **5 bugs**: a non-numeric `page`/`size`/`days`/`limit`, or an overflowing id, returned **500**. All now return 400 with a field error.
+  - A missing query parameter now names itself instead of showing the upload message.
+- ✅ **Failed-login lockout**: 5 wrong passwords in 15 minutes locks that email (429 + `Retry-After`), even with the right password.
+  - Letter case can't dodge it, and unknown emails behave identically (no account discovery).
+  - A success resets the count.
+- ✅ **Password change revokes old tokens** (Phase 2 gap closed).
+  - Migration V2 adds `users.password_changed_at`; `TokenRevocationValidator` rejects tokens issued earlier, and tokens of deleted accounts.
+  - The change returns a fresh token, so the current session continues.
+- ✅ **Security headers** on every API response: CSP `default-src 'none'; frame-ancestors 'none'` and `Referrer-Policy: no-referrer` (plus Spring's nosniff, `X-Frame-Options: DENY`, no-store)
+- ✅ **Token attack tests** (`SecurityHardeningTest`): unsigned `alg: none`, a foreign key, an edited payload, a bad subject, a missing account, garbage headers; the password hash never appears in any response
+- ✅ **Frontend unit tests**: 50 tests on Node's built-in runner, with **no dependencies** (`cd frontend && npm test`). They cover form validation, API error handling, sessions and open-redirect protection, microphone-permission errors, audio playback, and WAV encoding.
+- ✅ **Mutation check**: re-introducing the Phase 5 playback race makes exactly its test fail
+- ✅ `docs/TESTING.md`: how to run the tests, what they cover, and what is verified manually instead
+- ✅ Totals: **166 backend + 50 frontend tests, all passing**
+- ✅ Verified in the browser against real MySQL (migration V2 applied):
+  - the lockout message appears after 5 failures, even for the right password;
+  - after a password change the session continues while the **old token gets 401**.
+- ⬜ Still not automated: the DOM-driving page scripts (verified manually each phase), and live AI providers (need keys)
 
 ## Phase 8 — Deployment and docs ⬜
 Dockerfile · docker-compose (MySQL + backend + Nginx) · README completion · API docs · screenshots
