@@ -1,0 +1,52 @@
+# LinguaVoice: MySQL + Spring Boot backend + Nginx frontend.
+#
+#   cp .env.example .env      # then set DB_PASSWORD, MYSQL_ROOT_PASSWORD, JWT_SECRET (and AI keys)
+#   docker compose up --build
+#   open http://localhost:8088
+#
+# Only the frontend is published to the host. MySQL and the backend are reachable only inside the
+# compose network, so they can't clash with a locally installed MySQL (3306) or other apps (8080/8081).
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: linguavoice_db
+      MYSQL_USER: ${DB_USERNAME:-linguavoice}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    # JWT_SECRET, AI provider settings and rate limits come from .env ...
+    env_file: .env
+    # ... while these always point at the compose services (they override any local values in .env).
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/linguavoice_db?serverTimezone=UTC&characterEncoding=UTF-8
+      DB_USERNAME: ${DB_USERNAME:-linguavoice}
+      SERVER_PORT: "8081"
+      CORS_ALLOWED_ORIGINS: http://localhost:${APP_PORT:-8088}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8088}:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:

@@ -1,0 +1,11 @@
+# Store text files with LF line endings in the repository (and therefore in Docker build contexts),
+# whatever the developer's OS. This also silences Git's "LF will be replaced by CRLF" warnings.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.wav binary
+*.mp3 binary
+*.jar binary

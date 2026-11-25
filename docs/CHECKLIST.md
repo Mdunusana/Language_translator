@@ -179,5 +179,21 @@ Legend: ✅ done and verified · 🟡 done, not yet verified · ⬜ pending
   - after a password change the session continues while the **old token gets 401**.
 - ⬜ Still not automated: the DOM-driving page scripts (verified manually each phase), and live AI providers (need keys)
 
-## Phase 8 — Deployment and docs ⬜
-Dockerfile · docker-compose (MySQL + backend + Nginx) · README completion · API docs · screenshots
+## Phase 8 — Deployment and documentation ✅ (Docker run pending)
+- ✅ `backend/Dockerfile`: multi-stage (Maven build → Java 21 JRE on Alpine), non-root user, health check, container-aware memory settings; `.dockerignore`
+- ✅ `frontend/Dockerfile` + `nginx.conf`:
+  - static files only;
+  - `/api` proxied to the backend (same origin, Origin header dropped, as in the dev server);
+  - CSP, nosniff, no-referrer, a Permissions-Policy that allows the microphone for this site only;
+  - 10 MB upload limit; dotfiles denied.
+- ✅ `docker-compose.yml`:
+  - MySQL 8.4 (utf8mb4, volume, health check), backend (waits for healthy MySQL) and frontend;
+  - only the frontend is published (`APP_PORT`, default 8088), so there are no clashes with a local MySQL or 8080/8081.
+- ✅ Verified without Docker: the production jar was built with the Dockerfile's exact Maven command and run **with environment-only configuration** (no `.env`) against MySQL. Health UP, login 200, security headers present.
+- ✅ `.gitattributes` normalises line endings to LF, so Docker contexts are consistent and the CRLF warnings stop
+- ✅ `docs/API.md`: full API reference (auth, error format, every endpoint with examples, rules and status codes)
+- ✅ README rewritten for the portfolio: objectives, features, screenshots, architecture, database design, local and Docker setup, the configuration reference, AI provider setup, API summary, testing, security, future improvements
+- ✅ Screenshots captured at full resolution with headless Edge (landing, registration, translator, phone translator, profile) using a "Demo User" account. No stand-in translation output appears in them.
+- ✅ `scripts/capture-screenshots.mjs`: regenerates all screenshots, including the dashboard and history, once there is real data
+- ⬜ **`docker compose up --build` not yet run**: Docker isn't installed on the development machine
+- ⬜ **Live AI provider check**: needs keys; then capture the dashboard and history screenshots
